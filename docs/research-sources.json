@@ -1,0 +1,146 @@
+{
+  "reviewDate": "2026-11-06",
+  "verification": "Source review only; no live protocol tests",
+  "sources": [
+    {
+      "repository": "ChurchApps/FreeShow",
+      "revision": "ff784eb388c7baef60d67e6d4e7c504f4322bca3",
+      "path": "package.json",
+      "blobSHA": "c8bf2cdd4b06252e16872cef5f3c5da8afdb754c",
+      "url": "https://github.com/ChurchApps/FreeShow/blob/ff784eb388c7baef60d67e6d4e7c504f4322bca3/package.json"
+    },
+    {
+      "repository": "ChurchApps/FreeShow",
+      "revision": "ff784eb388c7baef60d67e6d4e7c504f4322bca3",
+      "path": "src/electron/servers.ts",
+      "blobSHA": "5e96e2862a467f47c11b1a69fd7a2bbed705668f",
+      "url": "https://github.com/ChurchApps/FreeShow/blob/ff784eb388c7baef60d67e6d4e7c504f4322bca3/src/electron/servers.ts"
+    },
+    {
+      "repository": "ChurchApps/FreeShow",
+      "revision": "ff784eb388c7baef60d67e6d4e7c504f4322bca3",
+      "path": "src/electron/utils/api.ts",
+      "blobSHA": "0851a0a20c8eaa2e62e069dcca29c737f4756923",
+      "url": "https://github.com/ChurchApps/FreeShow/blob/ff784eb388c7baef60d67e6d4e7c504f4322bca3/src/electron/utils/api.ts"
+    },
+    {
+      "repository": "ChurchApps/FreeShow",
+      "revision": "ff784eb388c7baef60d67e6d4e7c504f4322bca3",
+      "path": "src/electron/data/bonjour.ts",
+      "blobSHA": "f3ba96fd30267bebf867593d3f278215815ddb89",
+      "url": "https://github.com/ChurchApps/FreeShow/blob/ff784eb388c7baef60d67e6d4e7c504f4322bca3/src/electron/data/bonjour.ts"
+    },
+    {
+      "repository": "ChurchApps/FreeShow",
+      "revision": "ff784eb388c7baef60d67e6d4e7c504f4322bca3",
+      "path": "src/frontend/utils/remoteTalk.ts",
+      "blobSHA": "edbbad186e838bc479d942d392ac2f27c7fd510a",
+      "url": "https://github.com/ChurchApps/FreeShow/blob/ff784eb388c7baef60d67e6d4e7c504f4322bca3/src/frontend/utils/remoteTalk.ts"
+    },
+    {
+      "repository": "ChurchApps/FreeShow",
+      "revision": "ff784eb388c7baef60d67e6d4e7c504f4322bca3",
+      "path": "src/frontend/utils/sendData.ts",
+      "blobSHA": "4340eeaa00572c03daea804827cf107437f3de69",
+      "url": "https://github.com/ChurchApps/FreeShow/blob/ff784eb388c7baef60d67e6d4e7c504f4322bca3/src/frontend/utils/sendData.ts"
+    },
+    {
+      "repository": "ChurchApps/FreeShow",
+      "revision": "ff784eb388c7baef60d67e6d4e7c504f4322bca3",
+      "path": "src/frontend/utils/listeners.ts",
+      "blobSHA": "9b6ba8bea6598e3c971dc15c599972f1b9faf42a",
+      "url": "https://github.com/ChurchApps/FreeShow/blob/ff784eb388c7baef60d67e6d4e7c504f4322bca3/src/frontend/utils/listeners.ts"
+    },
+    {
+      "repository": "ChurchApps/FreeShow",
+      "revision": "ff784eb388c7baef60d67e6d4e7c504f4322bca3",
+      "path": "src/frontend/components/actions/api.ts",
+      "blobSHA": "f753a9525f9c781fa4fea815411e4df8b1f5efb2",
+      "url": "https://github.com/ChurchApps/FreeShow/blob/ff784eb388c7baef60d67e6d4e7c504f4322bca3/src/frontend/components/actions/api.ts"
+    },
+    {
+      "repository": "ChurchApps/FreeShow",
+      "revision": "ff784eb388c7baef60d67e6d4e7c504f4322bca3",
+      "path": "src/frontend/components/actions/apiGet.ts",
+      "blobSHA": "e3b2de0173d46c19cf36aead021672f41b9e16e0",
+      "url": "https://github.com/ChurchApps/FreeShow/blob/ff784eb388c7baef60d67e6d4e7c504f4322bca3/src/frontend/components/actions/apiGet.ts"
+    },
+    {
+      "repository": "ChurchApps/FreeShow",
+      "revision": "ff784eb388c7baef60d67e6d4e7c504f4322bca3",
+      "path": "src/frontend/components/actions/apiHelper.ts",
+      "blobSHA": "f881c2c4ba32379308630e6508077812badc75d2",
+      "url": "https://github.com/ChurchApps/FreeShow/blob/ff784eb388c7baef60d67e6d4e7c504f4322bca3/src/frontend/components/actions/apiHelper.ts"
+    },
+    {
+      "repository": "ChurchApps/FreeShow",
+      "revision": "ff784eb388c7baef60d67e6d4e7c504f4322bca3",
+      "path": "src/frontend/components/helpers/media.ts",
+      "blobSHA": "03aaacf143e81fca597bcebe8713e8cbf71415c8",
+      "url": "https://github.com/ChurchApps/FreeShow/blob/ff784eb388c7baef60d67e6d4e7c504f4322bca3/src/frontend/components/helpers/media.ts"
+    },
+    {
+      "repository": "ChurchApps/FreeShow",
+      "revision": "ff784eb388c7baef60d67e6d4e7c504f4322bca3",
+      "path": "src/frontend/components/output/clear.ts",
+      "blobSHA": "04e8c1fc60f6fe8dfb029bd33fc7792840ae94e3",
+      "url": "https://github.com/ChurchApps/FreeShow/blob/ff784eb388c7baef60d67e6d4e7c504f4322bca3/src/frontend/components/output/clear.ts"
+    },
+    {
+      "repository": "ChurchApps/FreeShow",
+      "revision": "ff784eb388c7baef60d67e6d4e7c504f4322bca3",
+      "path": "src/server/remote/util/socket.ts",
+      "blobSHA": "0bdfd72ec6349e2e2e2523823552f90433d3a010",
+      "url": "https://github.com/ChurchApps/FreeShow/blob/ff784eb388c7baef60d67e6d4e7c504f4322bca3/src/server/remote/util/socket.ts"
+    },
+    {
+      "repository": "ChurchApps/FreeShow",
+      "revision": "ff784eb388c7baef60d67e6d4e7c504f4322bca3",
+      "path": "src/server/remote/util/receiver.ts",
+      "blobSHA": "5325a71ce5706f2ed3770e84ab5865fa64c6f72b",
+      "url": "https://github.com/ChurchApps/FreeShow/blob/ff784eb388c7baef60d67e6d4e7c504f4322bca3/src/server/remote/util/receiver.ts"
+    },
+    {
+      "repository": "ChurchApps/FreeShow",
+      "revision": "ff784eb388c7baef60d67e6d4e7c504f4322bca3",
+      "path": "src/server/remote/util/output.ts",
+      "blobSHA": "1b6700538b78cea24e96f7562dd7413ae38a5159",
+      "url": "https://github.com/ChurchApps/FreeShow/blob/ff784eb388c7baef60d67e6d4e7c504f4322bca3/src/server/remote/util/output.ts"
+    },
+    {
+      "repository": "ChurchApps/FreeShow",
+      "revision": "ff784eb388c7baef60d67e6d4e7c504f4322bca3",
+      "path": "LICENSE",
+      "blobSHA": "f288702d2fa16d3cdf0035b15a9fcbc552cd88e7",
+      "url": "https://github.com/ChurchApps/FreeShow/blob/ff784eb388c7baef60d67e6d4e7c504f4322bca3/LICENSE"
+    },
+    {
+      "repository": "ChurchApps/FreeShowRemote",
+      "revision": "1c034473fe91444073c8d99ab6c34d3e591b5e55",
+      "path": "src/services/FreeShowService.ts",
+      "blobSHA": "e68e856e3c9bdf7c0bfd525d4736a5024bd20b5a",
+      "url": "https://github.com/ChurchApps/FreeShowRemote/blob/1c034473fe91444073c8d99ab6c34d3e591b5e55/src/services/FreeShowService.ts"
+    },
+    {
+      "repository": "ChurchApps/FreeShowRemote",
+      "revision": "1c034473fe91444073c8d99ab6c34d3e591b5e55",
+      "path": "src/services/AutoDiscoveryService.ts",
+      "blobSHA": "d785edf6b2e5714a1d86371bc9af2fc8409a34b5",
+      "url": "https://github.com/ChurchApps/FreeShowRemote/blob/1c034473fe91444073c8d99ab6c34d3e591b5e55/src/services/AutoDiscoveryService.ts"
+    },
+    {
+      "repository": "ChurchApps/FreeShowRemote",
+      "revision": "1c034473fe91444073c8d99ab6c34d3e591b5e55",
+      "path": "src/screens/WebViewScreen.tsx",
+      "blobSHA": "46c19806a16a8f27e4162ced2714500ce7ee6711",
+      "url": "https://github.com/ChurchApps/FreeShowRemote/blob/1c034473fe91444073c8d99ab6c34d3e591b5e55/src/screens/WebViewScreen.tsx"
+    },
+    {
+      "repository": "ChurchApps/FreeShowRemote",
+      "revision": "1c034473fe91444073c8d99ab6c34d3e591b5e55",
+      "path": "src/hooks/useFreeShowApi.ts",
+      "blobSHA": "d3f177a60fc13b7bf9bc616ea63a3a16eb031e01",
+      "url": "https://github.com/ChurchApps/FreeShowRemote/blob/1c034473fe91444073c8d99ab6c34d3e591b5e55/src/hooks/useFreeShowApi.ts"
+    }
+  ]
+}
