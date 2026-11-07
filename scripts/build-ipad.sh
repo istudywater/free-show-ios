@@ -12,4 +12,5 @@ xcodebuild -project FreeShowRemote.xcodeproj \
     -scheme FreeShowRemote -configuration Debug \
     -destination "$destination" \
     -derivedDataPath build/DerivedData \
-    CODE_SIGNING_ALLOWED=NO build
+    -clonedSourcePackagesDirPath build/SourcePackages \
+    CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO build

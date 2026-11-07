@@ -1,4 +1,4 @@
-# FreeShow integration contract — Milestone 1
+# FreeShow integration contract
 
 Reviewed November 6, 2026. **Source-verified does not mean live-tested.** No presentation commands were sent during this milestone.
 
@@ -192,3 +192,33 @@ Sources: [mobile WebView screen][webview], [mobile API hook][mobile-api], [gener
 [webview]: https://github.com/ChurchApps/FreeShowRemote/blob/1c034473fe91444073c8d99ab6c34d3e591b5e55/src/screens/WebViewScreen.tsx
 [mobile-api]: https://github.com/ChurchApps/FreeShowRemote/blob/1c034473fe91444073c8d99ab6c34d3e591b5e55/src/hooks/useFreeShowApi.ts
 [mobile-service]: https://github.com/ChurchApps/FreeShowRemote/blob/1c034473fe91444073c8d99ab6c34d3e591b5e55/src/services/FreeShowService.ts
+
+## Milestone 2 adapter verification
+
+Rechecked the pinned API listener, action registry, and `getClearedState` helper while implementing the prototype. The adapter uses POST `/`, optional Bearer authorization, `get_cleared` for readiness/output snapshots, and `previous_slide`, `next_slide`, `clear_all`, and `restore_output` for controls. All query envelope fields and six clearance booleans are validated before enabling controls. A successful command is followed by another read; no output effect is inferred from HTTP status alone.
+
+Mock checks verify payloads, auth/error behavior, timeouts, and stale replies. These are source-backed synthetic fixtures, not recorded server traffic. Compatibility and output effects still require the [live acceptance checks](connection-prototype.md).
+
+## Early scripture implementation — November 7, 2026
+
+Rechecked Remote handlers, initialization/authentication gating, browser scripture retrieval/search, Bible types, and Socket.IO-Client-Swift's package/compatibility documentation. The Swift adapter uses the pinned source contract above. Readiness requires ACCESS plus SCRIPTURE metadata. GET_SCRIPTURE replies echo the translation and request keys; API book/chapter updates include zero-based indices. Local data supplies canonical numeric identifiers, book names/abbreviations, and chapter/verse arrays.
+
+Reference parsing is client-side against retrieved book metadata for both local and API translations. API text search uses SEARCH_SCRIPTURE; local text search uses the retrieved Bible. Present uses an explicit prepared preview encoded as `book.chapter.verse,verse,...`. Collections, cross-chapter selections, and arbitrary nonnumeric book/verse identifiers are unsupported in this increment. Source compatibility is not live compatibility; see [scripture acceptance checks](scripture-increment.md).
+
+## Milestones 3–7 integration verification — November 7, 2026
+
+Rechecked [project types](https://github.com/ChurchApps/FreeShow/blob/ff784eb388c7baef60d67e6d4e7c504f4322bca3/src/types/Projects.ts), [layout expansion](https://github.com/ChurchApps/FreeShow/blob/ff784eb388c7baef60d67e6d4e7c504f4322bca3/src/frontend/components/helpers/shows.ts), [project selection](https://github.com/ChurchApps/FreeShow/blob/ff784eb388c7baef60d67e6d4e7c504f4322bca3/src/frontend/components/helpers/showActions.ts), general API queries/actions, and [Bonjour advertisement](https://github.com/ChurchApps/FreeShow/blob/ff784eb388c7baef60d67e6d4e7c504f4322bca3/src/electron/data/bonjour.ts).
+
+The operator uses Remote API:get_projects/get_shows/get_show/get_output/get_cleared, API:index_select_slide with zero-based index/showId/layoutId, and API:id_select_project for explicit desktop project selection. Project data contains an ordered shows array, optional per-item layout, and item types. Local occurrence IDs preserve position; an output show ID cannot uniquely identify a duplicate project occurrence. Supported existing media/PDF/audio/overlay/player items use the verified name_start_project_item handler, with active-project/item/name uniqueness checks before dispatch. Remaining types are displayed without guessed endpoints.
+
+Layout expansion follows each layout parent followed by the parent slide's children, including repeated parent occurrences and per-occurrence child data. Missing references are rejected instead of silently shifting output indices. Only a fresh, matching layout can be sent from a prepared direct-slide preview. There is no atomic server revision/locking transaction.
+
+PROJECTS/PROJECT/SHOWS/OUT_DATA supply pushes; queries also refresh output and content because not every edit is broadcast. ACTIVE_SHOW is not used as a read-only selection subscription: its handler can route through SHOW and affect desktop selection after idle. Browsing instead uses API:get_show. Thumbnail reads use API:get_slide_thumbnail, with bounded lazy requests and base64/text fallback.
+
+All of these behaviors are source-backed and covered by synthetic tests where practical. Native Bonjour resolution, iPad permissions/Keychain, actual display/capture behavior, and supported desktop releases still require the [field acceptance checklist](operator-guide.md).
+
+### Existing media item start
+
+The pinned apiHelper.ts `startProjectItemByName` supports image, video, PDF, audio, overlay and player items. Its API action is `name_start_project_item` with `{value:name}`. The server chooses a matching name relative to active project position when names repeat; the app therefore refuses ambiguous names rather than guessing. It re-fetches projects/library, validates the selected occurrence, verifies the same active project, and sends only after a separate confirmation. Missing names/types remain desktop-operated. This is not an atomic transaction against a concurrent rename/project change.
+
+PDF output is `{slide:{type:"pdf", id, name, page, pages}}`; zero-based `page` is displayed one-based. OutputHelper's normal next/previous path delegates PDF navigation to playPdf, so no invented PDF command is used. The demo includes a synthetic two-page document state to exercise this behavior without bundling a media file. Actual PDF/media playback, layer/loop/mute and lock behavior remain live tests of the desktop handler.

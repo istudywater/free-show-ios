@@ -1,28 +1,22 @@
 # Roadmap
 
-The seven milestones from the Obsidian **Codex Build Sequence Prompt** are the canonical implementation sequence. The five milestones in the earlier MVP summary are a high-level grouping, not a competing schedule.
+**November 7, 2026:** The user authorized building all remaining milestones without intermediate approval pauses, followed by one Xcode simulator review. This supersedes the earlier per-milestone stop instructions for this build. The seven-milestone sequence remains the implementation roadmap; scripture was added between Milestones 2 and 3.
 
-| Milestone | Scope | Status |
+| Milestone | Scope | Current status |
 | --- | --- | --- |
-| 1 | Research, minimal Xcode project, app shell, initial interfaces, documentation | Implemented; iPad build/launch verification pending on Mac Mini |
-| 2 | Manual connection, verified authentication, next/previous/clear/restore prototype | Not started |
-| Early scripture increment | Translation selection, reference/text search, preview, explicit Present, scripture navigation | Planned after Milestone 2; agreed direction November 6, 2026 |
-| 3 | Discovery, remembered connection, reconnection, local-network permissions, credential storage | Not started |
-| 4 | Service projects, ordered items, desktop synchronization | Not started |
-| 5 | Slides, thumbnails, direct selection, synchronization | Not started |
-| 6 | Integrated landscape iPad operator interface | Not started |
-| 7 | Network/lifecycle/concurrent-operator reliability and live-service testing | Not started |
+| 1 | Research, Xcode project, models/interfaces, shell, documentation | Implemented; simulator build/launch verified |
+| 2 | Manual connection/authentication and prototype controls | Implemented; 52 connection checks pass |
+| Early scripture increment | Translation selection, search, preview, explicit Present/navigation | Implemented; 56 scripture checks pass; now shares operator connection |
+| 3 | Discovery, remembered connection, credential storage, reconnect and refresh | Implemented; Bonjour/Keychain code compiled, injected reconnect/persistence checks pass; device/network acceptance pending |
+| 4 | Ordered service projects/items and desktop synchronization | Implemented; local preview vs desktop project/live indicators are explicit |
+| 5 | Flattened slides, lazy thumbnails/text fallback, direct presentation | Implemented; layout/child/repeat/index and pre-Present validation checks pass |
+| 6 | Adaptive iPad operator interface and persistent live controls | Implemented; offline demo available; user simulator review is next |
+| 7 | Failure handling, lifecycle/concurrent update behavior, duplicate protection, testing | Implemented with 59 operator checks and 200-operation navigation stress; real desktop/device/long-duration field acceptance remains pending |
 
-The early scripture increment changes the original post-V1 deferral. It remains a distinct increment after a usable connection, and does not authorize implementing everything during Milestone 1. Verify the selected desktop version's Remote search/retrieval handlers before committing to its UI or transport. Local translations and API-backed translations require different search behavior.
+All three automated suites pass **167 checks**. Simulator builds pass on Xcode 27.1 for arm64 and x86_64. See [operator guide](operator-guide.md) for review instructions and the outstanding acceptance checklist. No more implementation approval gates remain in this authorized build; user review follows completion.
 
-At each milestone, document results and remaining verification, then stop for review before proceeding. No Milestone 2 networking, automatic discovery, presentation controls, or scripture search has been implemented in the foundation.
+## Current boundaries
 
-## Open decisions
+Native shows, scripture, and uniquely named existing media/PDF/audio/overlay/player items in the active desktop project are supported. Ambiguous, unnamed and unsupported items remain desktop-operated. Read scope is the first active output, while broad commands may affect active outputs collectively. Duplicate occurrences have distinct local preview identities; an ON OUTPUT badge identifies the presentation on output, not a guaranteed occurrence index.
 
-- Supported FreeShow release: research baseline is 1.6.8-beta.3; local app is 1.5.2.
-- Socket.IO client dependency and supported Engine.IO/Socket.IO versions.
-- Operator-visible output scope when desktop outputs differ.
-- Explicit preview/present interaction and clear/restore labeling.
-- License, final bundle identifier, app icon, and release/distribution setup.
-
-The foundation uses iPadOS 17+ and Swift 6. Revisit the deployment target only if actual device requirements demand it.
+The source baseline is FreeShow 1.6.8-beta.3. A supported desktop release still needs live validation. Scripture collections, cross-chapter selections, arbitrary nonnumeric verse identifiers, editing/uploads, cloud sync, app artwork/distribution setup, and the repository license remain outside this MVP build.

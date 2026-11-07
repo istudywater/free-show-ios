@@ -9,7 +9,11 @@ trap 'rm -rf "$module_cache"' EXIT
 swiftc -typecheck -parse-as-library -swift-version 6 \
     -module-cache-path "$module_cache" \
     FreeShowRemote/Core/*.swift \
+    FreeShowRemote/Core/Networking/*.swift \
+    FreeShowRemote/Core/Persistence/*.swift \
+    FreeShowRemote/Core/Discovery/*.swift \
+    FreeShowRemote/Features/Operator/OperatorStore.swift \
     FreeShowRemote/Services/*.swift \
-    FreeShowRemote/App/*.swift \
-    FreeShowRemote/Features/Foundation/*.swift
-printf '%s\n' 'Foundation source checks passed (host SDK; iPad build still required).'
+    FreeShowRemote/App/AppState.swift \
+    FreeShowRemote/Features/Scripture/ScriptureState.swift
+printf '%s\n' 'Core/service/state checks passed (host SDK; UI requires iPad build).'

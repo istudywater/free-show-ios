@@ -1,60 +1,55 @@
 # Architecture
 
-## Foundation decision
+## Current application
 
-Target iPadOS 17+, Swift 6, and Xcode 16+. These are initial project choices, not requirements imposed by FreeShow. Use native SwiftUI, Foundation, and Combine. Support all iPad orientations and window sizes; the eventual operator interface will prioritize landscape. No third-party dependencies are installed in Milestone 1.
+Native SwiftUI, iPadOS 17+, Swift 6. The app root owns OperatorStore and BonjourDiscovery. OperatorStore composes one RemoteSession with RemotePresentationService and RemoteScriptureService. ScriptureState adopts that same authenticated session; it no longer needs a second connection form in the normal app.
 
-The application shell is intentionally small. `FreeShowRemoteApp` owns `AppState` via `StateObject`, and injects that state into `FoundationView`. `AppState` is main-actor isolated and begins disconnected with unknown output. There are no socket connections, permission prompts, persistence, fake service data, or live controls.
-
-## Boundaries
+The normal transport is Socket.IO-Client-Swift 16.1.1 / Starscream 4.0.8. SwitchableRemoteTransport selects it or the explicitly labeled DemoTransport. Offline demo uses the same domain/service/controller paths without allocating a live socket or issuing Bonjour searches. The earlier RESTClient, AppState, and ConnectionView remain development/prototype sources and are not the primary operator UI.
 
 | Component | Responsibility |
 | --- | --- |
-| SwiftUI features | Display state and collect explicit operator intent |
-| AppState | Own preview selection separately from server-confirmed output |
-| ConnectionService | Establish a session, authenticate, synchronize, disconnect |
-| PresentationService | Read projects/presentations and deliver authoritative snapshots |
-| OutputService | Explicit operations that affect live output |
-| ScriptureService | Translation lookup, reference/text search, preview, and explicit presentation |
-| Future transport adapters | Decode wire payloads, normalize identifiers/indexes, track timeouts and session lifetime |
+| OperatorView | Service list, slide grid, current/next/selected previews, persistent command dock, confirmations |
+| OperatorConnectionView | Manual/discovered connection, preferences, optional Keychain consent, demo and notices |
+| OperatorStore | Connection/retry/lifecycle policy, preview intent, live snapshot, command gating, stale-state watchdog and bounded thumbnail queue |
+| RemotePresentationService | Read projects/shows/output, normalize layout order, publish snapshots, send verified API actions |
+| ScriptureState / RemoteScriptureService | Search/results/preview, individual local/API translations, prepared-passage presentation and scripture navigation |
+| RemoteSession | Remote password flow, initialization readiness, per-channel pending requests, timeouts, push observers, generation-scoped replies |
+| SocketIOTransport | Untyped Socket.IO values and library callbacks confined to a main-queue adapter |
+| BonjourDiscovery | Native `_freeshow._udp` browsing/resolution with REMOTE advertisement filtering and manual fallback |
+| KeychainVault / ConnectionPreferences | Opt-in this-device password storage and password-free last-computer/preferences |
 
-The service protocols are initial app contracts, not implemented networking clients. They can be supplied as mocks or real adapters through initializer injection when the corresponding owner is introduced. Do not create unused transport layers just to fill a directory tree. Wire DTOs belong with future adapters; domain models do not conform to Codable because upstream payloads are not identical to app models.
+## Readiness and synchronization
 
-## Proposed data flow
+An open socket is insufficient. The session waits for ACCESS and SCRIPTURE metadata; presentation readiness additionally requires successful project/library/output/clearance reads. The store only enables commands when the current session is synchronized, output is known, and no other mutation/scripture operation is active.
 
-```mermaid
-flowchart LR
-    UI[SwiftUI features] --> State[Main actor state]
-    State --> Services[Service interfaces]
-    Services --> Adapter[Future FreeShow adapters]
-    Adapter --> Desktop[FreeShow Desktop]
-    Desktop --> Snapshot[Authoritative updates]
-    Snapshot --> State
-```
+PROJECTS, PROJECT, SHOWS, and OUT_DATA pushes update authoritative state. A two-second heartbeat queries output/clearance; projects/library refresh every five ticks, selected presentation content every three ticks, and live presentation content is refreshed alongside output. These reads cover source paths that do not consistently broadcast library edits. A revision guard prevents an older output query from overwriting a newer push. Invalid project pushes do not replace valid cached project data.
 
-Use REST with URLSession for the Milestone 2 command prototype if the target installation exposes it. The default REST port is 5506. Use a separate Remote Socket.IO session, normally port 5510, for project/output pushes in later milestones. REST API and Remote passwords are separate settings. Do not assume API availability implies Remote availability or vice versa.
+After eight seconds without a fresh snapshot, a watchdog marks state stale and pauses controls while a request is still bounded by its timeout. Disconnect makes output unknown immediately. Automatic reconnect uses capped exponential backoff, reauthenticates, fetches a complete new snapshot, reloads previews, and never replays a command. Wrong passwords/connection limits and unsupported data require operator attention. Changing desktop scripture metadata invalidates cached Bibles and reconnects to fetch fresh metadata.
 
-Socket.IO is not a raw WebSocket protocol. Evaluate a maintained Swift Socket.IO client against the actual server version before adding it. A small native REST client is practical; hand-writing Engine.IO/Socket.IO framing and reconnection is not part of this foundation. No dependency choice is locked in yet.
+## Preview and live intent
 
-## State and command semantics
+Projects/items/slides are browsed locally. Make project active on desktop, Present, Start item, next/previous, Clear all, Restore, and scripture presentation/navigation are explicit operations. Clear all, direct presentation and media start require confirmation. Existing media/PDF/audio/overlay/player items use verified name_start_project_item only when their exact name is unique in the confirmed active project. Fresh project/library reads revalidate the captured item before dispatch; the app rejects ambiguous or changed names. PDF state/page counts stay known so native Next/Previous can navigate pages. Current/next output and selected preview are separate panels and states.
 
-- Model connection progress explicitly: disconnected, connecting, authentication required, synchronizing, connected, reconnecting, failed. An open socket alone is insufficient to report operational readiness.
-- Keep local preview selection independent of live output. Fetching a presentation must not invoke a present command. Note that upstream Remote `SHOW` can change desktop selection after an idle period; use a read-only query for purely local browsing where appropriate.
-- Keep unknown output distinct from cleared output. On disconnect, retain any last snapshot only with a stale indicator; do not treat it as live truth.
-- Identify a slide by presentation, layout, and zero-based flattened layout position. The same slide may appear multiple times. Wire conversions belong only in the adapter: general API indexes are one-based, Remote API channels bypass that conversion.
-- Do not optimistically mark a slide live after sending a command. REST 204 is not confirmation that an output changed. Refresh/observe authoritative output.
-- Never replay next/previous/present/clear commands automatically after timeouts or reconnection. These actions can cause unintended second changes.
-- Reauthenticate, replace subscriptions, and fetch a fresh snapshot after reconnecting. Remote messages do not provide a general request-correlation ID; serialize conflicting requests and scope responses to the current session.
-- `clearAll` means FreeShow's broad clear operation, including audio and timers. It is not a black-screen toggle. Restore depends on the desktop's cached state and output lock.
+Projects preserve server item order; occurrence IDs include project ID and position. Slide layout order expands parent/child groups and repeated occurrences. Each slide identity includes presentation, layout, and zero-based flattened position. API:* Remote commands use those zero-based positions; the old general REST prototype converts to one-based at its boundary.
 
-## Scripture expansion
+Before direct Present, the service re-fetches the selected layout and compares slide identities/content/disabled state with the confirmed preview. Changed/missing slides are rejected and refreshed. The protocol has no atomic revision token, so another operator can still edit after validation; simultaneous live editing remains a field acceptance case.
 
-Keep Bible content on the FreeShow side wherever practical. Current source exposes Remote `SCRIPTURE`, `GET_SCRIPTURE`, and `SEARCH_SCRIPTURE`, plus presentation actions. API-backed and local translations have different search paths; local data may need client-side indexing. `ScriptureService` reserves both searches, translation listing, preview, presentation, and navigation without inventing HTTP endpoints.
+The monitored output is the first active output. Null output, cleared slide layers, broad all-cleared flags, temporary scripture output, and unknown/malformed data remain distinct. A null command reply indicates request handling, not successful physical output. ON OUTPUT can identify the foreground slide or media resource where the desktop reports it; audio/overlays and duplicate occurrences are not inferred as uniquely active. Duplicate project occurrences are separately selectable, but a presentation-level ON OUTPUT badge does not infer an unavailable occurrence identity.
 
-Plan an early scripture increment after Milestone 2, before building the full operator interface. Its first task is confirming server capabilities on the chosen installation. Search and preview must never issue a presentation command implicitly.
+## Request concurrency and failure
 
-## Deferred implementation decisions
+RemoteSession allows independent channels to progress concurrently, so a thumbnail render cannot block Next/Previous. Requests sharing a channel are serialized or rejected while busy. Show reads have a cancellation-aware ownership queue; UI mutations have a separate one-at-a-time gate. Conflicting replies are matched against echoed translation/query or book/chapter fields where available.
 
-Choose the supported FreeShow release only after live verification. The source baseline is 1.6.8-beta.3, while this development Mac has 1.5.2 installed. Multiple outputs, temporary scripture/PDF output shapes, missing thumbnails, and unsupported project item types need explicit adapter policies. Start with the first active output only if the operator-visible scope is clearly stated.
+Any timeout/cancellation discards the connection and pending requests because there is no general request ID. Generations protect session callbacks, read results, tasks, and reconnect cleanup. A possibly executed native or scripture command is marked uncertain after interruption, is never retried, and requires an output check before further commands. A newer desktop push always wins over an older query response.
 
-Add local network usage text, narrowly scoped transport configuration, and `_freeshow._udp` Bonjour declarations when networking/discovery is introduced. Store remembered passwords in Keychain, not logs or preferences. Milestone 1 requests no network access.
+Backgrounding cancels work, disconnects, clears scripture preview/live truth, and preserves only in-memory reconnect intent/credentials when enabled. Foregrounding performs fresh synchronization. Turning reconnect off stops pending retry behavior. Explicit disconnect also cancels retries. Passwords are saved only by explicit Keychain preference; UserDefaults stores no password, and demo does not save credentials.
+
+## Images, memory and accessibility
+
+Visible slides queue thumbnails lazily, one render request at a time. Images are limited to 24 cached entries / approximately 16 MB compressed data, with text fallback for empty/unsupported/invalid results. Presentation changes invalidate images and in-flight image generations. A render interrupted by connection loss pauses automatic rendering until explicitly requested again. Thumbnail work does not share the mutation gate.
+
+The landscape operator layout has three panels. Narrow windows and accessibility text sizes use a compact service/slides/live switcher. Next/Previous, Clear/Restore, and Present remain in a fixed dock; labels, badges, and accessible names distinguish selected, live, and disabled slides without relying solely on color. Full device/accessibility acceptance remains a manual checklist.
+
+## Verification and scope
+
+The source baseline is pinned in freeshow-api.md and research-sources.json. Mock tests use original sample sentences and isolated preferences/credential stores. They verify network/state behavior; they do not prove compatibility with a running desktop, physical display outputs, or real Wi-Fi interruptions. See operator-guide.md and development-log.md for exact results and remaining field checks.

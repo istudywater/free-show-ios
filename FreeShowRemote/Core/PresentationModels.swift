@@ -13,6 +13,11 @@ struct ProjectItem: Identifiable, Equatable, Sendable {
     let presentationID: String?
     let name: String
     let kind: String
+    var explicitName: String? = nil
+    var canStartByName: Bool { ["image", "video", "pdf", "audio", "overlay", "player"].contains(kind) && !(explicitName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true) }
+    var layoutID: String? = nil
+    var index: Int = 0
+    var canPreview: Bool { kind == "show" && presentationID != nil }
 }
 
 struct Presentation: Identifiable, Equatable, Sendable {
@@ -27,6 +32,9 @@ struct Slide: Identifiable, Equatable, Sendable {
     let id: SlideReference
     let text: String
     let thumbnail: Data?
+    var sourceID: String = ""
+    var group: String = ""
+    var isDisabled: Bool = false
 }
 
 struct SlideReference: Hashable, Sendable {
@@ -64,4 +72,5 @@ struct PresentationSnapshot: Equatable, Sendable {
     let activeProjectID: String?
     let output: OutputState
     let receivedAt: Date
+    var desktopSelectionID: String? = nil
 }
