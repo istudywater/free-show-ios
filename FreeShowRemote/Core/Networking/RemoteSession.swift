@@ -52,6 +52,7 @@ struct RemoteMessage: Codable, Equatable, Sendable {
 
 enum RemoteEvent: Sendable {
     case connected, closed
+    case failed(String)
     case message(RemoteMessage)
 }
 
@@ -64,9 +65,11 @@ protocol RemoteTransport: AnyObject {
 }
 
 enum ScriptureError: LocalizedError, Equatable {
+    case transport(String)
     case disconnected, password, capacity, timeout, invalidData, libraryChanged, busy, notFound, invalidReference, shortSearch, notPreviewed
     var errorDescription: String? {
         switch self {
+        case .transport(let reason): "RemoteShow connection failed: \(reason)"
         case .disconnected: "RemoteShow disconnected. Check its host, port, and settings, then connect again."
         case .password: "RemoteShow needs its own password. Check the Remote password in FreeShow settings."
         case .capacity: "FreeShow's Remote connection limit was reached."
@@ -166,6 +169,7 @@ final class RemoteSession {
             do { try transport.emit(RemoteMessage(channel: "PASSWORD", data: .null)) }
             catch { close(error: error) }
         case .closed: close(error: ScriptureError.disconnected)
+        case .failed(let reason): close(error: ScriptureError.transport(reason))
         case .message(let message):
             for observer in Array(messageObservers.values) { observer(message) }
             switch message.channel {

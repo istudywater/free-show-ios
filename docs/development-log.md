@@ -137,3 +137,10 @@ Obsidian received a milestone status/handoff note and brief dated clarifications
 Build and launch on an iPad simulator on the Mac Mini, then record Xcode/runtime versions and visual checks. Confirm the target FreeShow release before implementing networking. Decide the repository license before open-source distribution.
 
 Milestone 1 implementation is ready for review, with build/launch acceptance outstanding. Milestone 2 has not started. All repository changes remain local; no commit or push was performed.
+# RemoteShow device connection follow-up — November 7, 2026
+
+The user confirmed that RemoteShow loads in iPad Safari, while the native app immediately reports a generic disconnect. This establishes browser reachability but does not identify the native transport failure.
+
+- Removed forced WebSocket-only transport; Socket.IO now starts with its default HTTP polling and negotiates an upgrade.
+- Preserve transport error/disconnect details in the app's connection error instead of replacing them with host/port advice. These failures remain eligible for automatic reconnection; pending requests close and commands are never replayed.
+- Added regression checks for preserving the failure reason and disabling session readiness after a transport failure. Scripture and operator suites each pass 59 checks. The unsigned simulator build passes. Physical-device reconnection still requires a rebuilt app and a user retest; no live fix is claimed yet.

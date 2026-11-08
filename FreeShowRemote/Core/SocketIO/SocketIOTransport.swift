@@ -14,7 +14,10 @@ final class SocketIOTransport: RemoteTransport {
         disconnect()
         let token = generation
         let manager = SocketManager(socketURL: url, config: [
-            .version(.three), .forceWebsockets(true), .reconnects(false),
+            // Start with HTTP polling and negotiate a WebSocket upgrade, as the
+            // browser client does. A usable polling connection can stay active
+            // when a network or server rejects the upgrade.
+            .version(.three), .reconnects(false),
             .log(false), .handleQueue(.main)
         ])
         self.manager = manager
@@ -26,16 +29,16 @@ final class SocketIOTransport: RemoteTransport {
                 self.receive?(.connected)
             }
         }
-        socket.on(clientEvent: .disconnect) { [weak self] _, _ in
+        socket.on(clientEvent: .disconnect) { [weak self] values, _ in
             MainActor.assumeIsolated {
                 guard let self, self.generation == token else { return }
-                self.receive?(.closed)
+                self.receive?(.failed(Self.failureDescription(values, fallback: "The server closed the connection.")))
             }
         }
-        socket.on(clientEvent: .error) { [weak self] _, _ in
+        socket.on(clientEvent: .error) { [weak self] values, _ in
             MainActor.assumeIsolated {
                 guard let self, self.generation == token else { return }
-                self.receive?(.closed)
+                self.receive?(.failed(Self.failureDescription(values, fallback: "Socket.IO could not establish or maintain the connection.")))
             }
         }
         socket.on("REMOTE") { [weak self] values, _ in
@@ -48,6 +51,16 @@ final class SocketIOTransport: RemoteTransport {
             }
         }
         socket.connect()
+    }
+
+    private static func failureDescription(_ values: [Any], fallback: String) -> String {
+        if let error = values.first as? NSError {
+            return "\(error.localizedDescription) (\(error.domain), \(error.code))"
+        }
+        if let reason = values.first as? String, !reason.isEmpty {
+            return String(reason.prefix(500))
+        }
+        return fallback
     }
 
     func emit(_ message: RemoteMessage) throws {

@@ -305,7 +305,11 @@ final class OperatorStore: ObservableObject {
                     guard token == self.generation, !Task.isCancelled else { return }
                     self.attempting = false
                     self.errorMessage = error.localizedDescription
-                    let recoverable = [ScriptureError.disconnected, .timeout, .libraryChanged].contains(error as? ScriptureError ?? .invalidData)
+                    let recoverable: Bool
+                    switch error as? ScriptureError {
+                    case .disconnected, .timeout, .libraryChanged, .transport: recoverable = true
+                    default: recoverable = false
+                    }
                     guard self.autoReconnect, self.desired, recoverable else {
                         self.desired = false
                         self.phase = error as? ScriptureError == .password ? .authenticationRequired : .failed(error.localizedDescription)

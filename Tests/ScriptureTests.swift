@@ -139,6 +139,16 @@ struct ScriptureTests {
         oldReceive?(.closed)
         expect(timeoutSession.isReady, "Previous-session callbacks ignored")
         timeoutTransport.silent = true
+        let beforeFailure = timeoutTransport.emitted.count
+        let failedRead = Task { try await timeoutSession.request(channel: "API:get_output") }
+        while timeoutTransport.emitted.count == beforeFailure { await Task.yield() }
+        timeoutTransport.receive?(.failed("WebSocket handshake rejected"))
+        await expectError(.transport("WebSocket handshake rejected")) { _ = try await failedRead.value }
+        expect(!timeoutSession.isReady, "Transport failure disables controls and closes pending reads")
+        expect(ScriptureError.transport("WebSocket handshake rejected").localizedDescription.contains("WebSocket handshake rejected"), "Transport reason reaches the displayed error")
+        timeoutTransport.silent = false
+        try await timeoutSession.connect(to: endpoint, password: nil)
+        timeoutTransport.silent = true
         let start = timeoutTransport.emitted.count
         let pending = Task { try await timeoutSession.request(channel: "GET_SCRIPTURE") { $0["id"].string == "local" } }
         while timeoutTransport.emitted.count == start { await Task.yield() }
