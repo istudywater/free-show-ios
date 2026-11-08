@@ -4,7 +4,7 @@ November 7, 2026
 
 ## Start in Xcode
 
-Open FreeShowRemote.xcodeproj, choose FreeShowRemote and an iPad simulator, then Run. Xcode resolves the pinned Socket.IO packages the first time. The app targets iPadOS 17+; simulator signing does not require a team. Physical-device runs need your development team and the local-network permission prompt.
+Open FreeShowController.xcodeproj, choose FreeShowController and an iPad simulator, then Run. Xcode resolves the pinned Socket.IO packages the first time. The app targets iPadOS 17+; simulator signing does not require a team. Physical-device runs need your development team and the local-network permission prompt.
 
 Tap **Try offline demo**, or add `--demo` to the Debug scheme's Run arguments for automatic offline startup. The demo never connects to a computer and uses original sample service text. Its sample passage is `Sample 1:1–3`, explicitly not Bible content. Remove the launch argument before testing a real server.
 

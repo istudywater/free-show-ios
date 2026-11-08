@@ -2,7 +2,7 @@ import SwiftUI
 
 @main
 @MainActor
-struct FreeShowRemoteApp: App {
+struct FreeShowControllerApp: App {
     @StateObject private var store = OperatorStore(transport: SwitchableRemoteTransport(live: SocketIOTransport()), vault: KeychainVault())
     @StateObject private var discovery = BonjourDiscovery()
     @Environment(\.scenePhase) private var scenePhase

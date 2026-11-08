@@ -58,7 +58,7 @@ struct OperatorConnectionView: View {
                     Text("Explore a sample service and demo passage. Demo controls never contact a computer.").font(.footnote).foregroundStyle(.secondary)
                 }
                 Section("About") {
-                    Text("FreeShow Remote · iPadOS 17+")
+                    Text("FreeShow Controller · iPadOS 17+")
                     Text("RemoteShow transport: Socket.IO-Client-Swift 16.1.1 and Starscream 4.0.8.").font(.footnote).foregroundStyle(.secondary)
                     NavigationLink("Open-source notices") { NoticesView() }
                 }

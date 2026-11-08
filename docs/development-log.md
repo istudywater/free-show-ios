@@ -1,5 +1,9 @@
 # Development log
 
+## November 7, 2026 — FreeShow Controller branding
+
+Renamed the app, source directory, Xcode project/target/shared scheme, app entry point, user-facing labels, scripts, and documentation to FreeShow Controller. Retained bundle identity and credential/preferences keys to update the existing iPad installation. Added a generated orange/cyan presentation-screen icon and Smixx-style startup artwork, integrated through the asset catalog and LaunchScreen.storyboard. Revision 2 centers the logo and wordmark inside the charcoal panel. Original artwork and exact prompts are retained in Design/Brand. All 182 checks and foundation checks pass after the rename. The simulator build confirms the new display name, icon metadata, asset catalog, and compiled launch storyboard.
+
 ## November 7, 2026 — Live device follow-up: previews and operator controls
 
 The user reports successful Mac discovery and presentation control after updating FreeShow (approximately 1.6.7), with previews still unavailable. Reviewed the 1.6.7 get_show implementation and desktop capture behavior: thumbnails depend on an active desktop output. No live payload from the user’s failing show was available.
@@ -127,14 +131,14 @@ No behavioral unit tests were added for this static shell and data-only contract
 ### Files created
 
 - `.gitignore`, `.gitattributes`, `README.md`
-- `FreeShowRemote.xcodeproj/project.pbxproj`
-- `FreeShowRemote.xcodeproj/xcshareddata/xcschemes/FreeShowRemote.xcscheme`
-- `FreeShowRemote/App/FreeShowRemoteApp.swift`
-- `FreeShowRemote/App/AppState.swift`
-- `FreeShowRemote/Core/PresentationModels.swift`
-- `FreeShowRemote/Core/ScriptureModels.swift`
-- `FreeShowRemote/Services/ServiceInterfaces.swift`
-- `FreeShowRemote/Features/Foundation/FoundationView.swift`
+- `FreeShowController.xcodeproj/project.pbxproj`
+- `FreeShowController.xcodeproj/xcshareddata/xcschemes/FreeShowController.xcscheme`
+- `FreeShowController/App/FreeShowControllerApp.swift`
+- `FreeShowController/App/AppState.swift`
+- `FreeShowController/Core/PresentationModels.swift`
+- `FreeShowController/Core/ScriptureModels.swift`
+- `FreeShowController/Services/ServiceInterfaces.swift`
+- `FreeShowController/Features/Foundation/FoundationView.swift`
 - `scripts/check-foundation.sh`, `scripts/check-project.py`, `scripts/build-ipad.sh`
 - `docs/architecture.md`, `docs/freeshow-api.md`, `docs/research-sources.json`
 - `docs/roadmap.md`, `docs/mac-mini-handoff.md`, `docs/development-log.md`

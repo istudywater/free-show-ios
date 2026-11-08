@@ -5,7 +5,7 @@ November 7, 2026
 The implementation through Milestones 3–7 is ready for simulator review. The user authorized finishing these milestones together; older per-milestone stop notes are historical. Source, Xcode project, pinned packages, tests, licenses, and technical docs live in this repository. Obsidian contains the planning/review companion notes, with no build dependency on that vault.
 
 1. Transfer or clone the complete current repository, including uncommitted files if transferring this working folder. No push was performed during the build.
-2. Open FreeShowRemote.xcodeproj and choose FreeShowRemote plus an installed iPad simulator.
+2. Open FreeShowController.xcodeproj and choose FreeShowController plus an installed iPad simulator.
 3. Run, then tap Try offline demo. Optional Debug scheme argument: `--demo`.
 4. Rotate to landscape and review the three-panel console, or use compact Service/Slides/Live panes in portrait. The command dock stays visible. Check the distinction between preview and output.
 5. Try the Scripture demo with `Sample 1:1–3`. These are clearly labeled sample sentences, not Bible content.

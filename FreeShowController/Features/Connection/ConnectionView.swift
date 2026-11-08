@@ -65,7 +65,7 @@ struct ConnectionView: View {
                         .disabled(state.connection != .connected || state.isBusy)
                 }
             }
-            .navigationTitle("FreeShow Remote")
+            .navigationTitle("FreeShow Controller")
             .confirmationDialog("Clear all active outputs?", isPresented: $confirmClear, titleVisibility: .visible) {
                 Button("Clear all outputs", role: .destructive) { state.send(.clear) }
                 Button("Cancel", role: .cancel) {}

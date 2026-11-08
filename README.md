@@ -1,4 +1,4 @@
-# FreeShow iPad Remote
+# FreeShow Controller
 
 Native SwiftUI operator console for FreeShow. The desktop renders presentations; the iPad browses the service, previews slides, controls output, and searches the desktop Bible library.
 
@@ -8,9 +8,13 @@ The foundation, connection prototype, early scripture increment, and implementat
 
 **Ready for Xcode simulator review.** Xcode 27.1 simulator builds pass for arm64/x86_64. Automated suites pass **182 checks** (52 connection, 59 scripture, 71 operator), including 200 sequential navigation operations. Live FreeShow compatibility, physical-iPad permissions, and real-service/extended soak acceptance still require testing. No supported desktop version or live-service reliability guarantee is claimed yet.
 
+## Branding
+
+The app icon and startup screen follow the Smixx orange, charcoal, white, and cyan identity. Artwork and generation prompts are in [Design/Brand/Branding.md](Design/Brand/Branding.md). The app, target, and shared scheme are named FreeShow Controller / FreeShowController. The existing bundle identifier and saved connection keys are retained for upgrades.
+
 ## Open and review in Xcode
 
-1. Open `FreeShowRemote.xcodeproj` and choose the **FreeShowRemote** scheme.
+1. Open `FreeShowController.xcodeproj` and choose the **FreeShowController** scheme.
 2. Select an installed **iPad simulator**, then **Product → Run**. The minimum app OS is iPadOS 17; use Xcode 16+ with Swift 6 and an installed iOS SDK/runtime.
 3. Tap **Try offline demo** in Operator or Connection. The demo supplies a sample service, slides, live state, and sample scripture text without any network connection.
 4. Select service items and slides, including the sample PDF item; check that preview differs from the live indicator. Tap to live starts off: taps preview and a half-second hold presents; enabling it makes a single tap present. The bottom dock has Tap to live and Clear output / Go live on the left, Previous/Next on the right, and secondary actions under More. Rotate to landscape to see the service, slide grid, and live/preview panels side by side.
@@ -19,7 +23,7 @@ The foundation, connection prototype, early scripture increment, and implementat
 
 For automatic demo startup in a Debug build, add `--demo` under **Product → Scheme → Edit Scheme → Run → Arguments Passed On Launch**. Remove it when testing a real connection. For a physical iPad, select your development team in Signing & Capabilities; simulator builds do not need a team.
 
-Xcode resolves Socket.IO-Client-Swift **16.1.1** and Starscream **4.0.8** on the first build. Revisions are pinned in `FreeShowRemote.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`. No CocoaPods or XcodeGen is needed.
+Xcode resolves Socket.IO-Client-Swift **16.1.1** and Starscream **4.0.8** on the first build. Revisions are pinned in `FreeShowController.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`. No CocoaPods or XcodeGen is needed.
 
 ## Connect to FreeShow
 

@@ -8,8 +8,8 @@ if ! xcodebuild -version; then
 fi
 # Pass "platform=iOS Simulator,id=<UDID>" to build for a specific installed simulator.
 destination="${1:-generic/platform=iOS Simulator}"
-xcodebuild -project FreeShowRemote.xcodeproj \
-    -scheme FreeShowRemote -configuration Debug \
+xcodebuild -project FreeShowController.xcodeproj \
+    -scheme FreeShowController -configuration Debug \
     -destination "$destination" \
     -derivedDataPath build/DerivedData \
     -clonedSourcePackagesDirPath build/SourcePackages \

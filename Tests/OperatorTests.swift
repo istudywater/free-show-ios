@@ -131,7 +131,7 @@ struct OperatorTests {
         let live = PresentationDecoder.output(json(#"{"slide":{"id":"show","layout":"a","index":0}}"#))
         expect(live == .live(SlideReference(presentationID: "show", layoutID: "a", index: 0)), "Output index zero is valid")
 
-        let suite = "FreeShowRemote.tests." + UUID().uuidString
+        let suite = "FreeShowController.tests." + UUID().uuidString
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
         let fixture = ControlledRemote(), vault = MemoryCredentialVault()

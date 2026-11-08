@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 root = Path(__file__).resolve().parent.parent
-project_path = root / 'FreeShowRemote.xcodeproj/project.pbxproj'
+project_path = root / 'FreeShowController.xcodeproj/project.pbxproj'
 xml = subprocess.check_output(['plutil', '-convert', 'xml1', '-o', '-', str(project_path)])
 project = plistlib.loads(xml)
 objects = project['objects']
@@ -21,13 +21,13 @@ for build_id in source_phases[0]['files']:
     path = reference['path']
     assert (root / path).is_file(), f'Missing source: {path}'
     compiled.append(path)
-expected = {path.relative_to(root).as_posix() for path in (root / 'FreeShowRemote').rglob('*.swift')}
+expected = {path.relative_to(root).as_posix() for path in (root / 'FreeShowController').rglob('*.swift')}
 assert set(compiled) == expected, 'Project source membership differs from files on disk'
 assert len(compiled) == len(set(compiled)), 'Duplicate source membership'
-scheme = ET.parse(root / 'FreeShowRemote.xcodeproj/xcshareddata/xcschemes/FreeShowRemote.xcscheme')
+scheme = ET.parse(root / 'FreeShowController.xcodeproj/xcshareddata/xcschemes/FreeShowController.xcscheme')
 for ref in scheme.iter('BuildableReference'):
     assert objects[ref.attrib['BlueprintIdentifier']] == target
-    assert ref.attrib['ReferencedContainer'] == 'container:FreeShowRemote.xcodeproj'
+    assert ref.attrib['ReferencedContainer'] == 'container:FreeShowController.xcodeproj'
 for config_id in objects[target['buildConfigurationList']]['buildConfigurations']:
     settings = objects[config_id]['buildSettings']
     assert str(settings['TARGETED_DEVICE_FAMILY']) == '2'

@@ -55,7 +55,7 @@ struct OperatorView: View {
                     controlDock.padding(.horizontal).padding(.vertical, 8).background(.bar)
                 }
             }
-            .navigationTitle(store.isDemo ? "FreeShow · Demo" : "FreeShow Remote")
+            .navigationTitle(store.isDemo ? "FreeShow Controller · Demo" : "FreeShow Controller")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
