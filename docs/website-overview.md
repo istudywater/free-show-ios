@@ -40,7 +40,7 @@ The bottom-left Clear output / Go live button clears active outputs, including a
 
 ### Keep preview and live state distinct
 
-Live indicators distinguish the slide on output from the slide selected for preview. Current and next slide text help operators prepare the next cue. Monitoring follows the first active desktop output; some controls affect multiple active outputs.
+The current live slide image and status stay pinned at the top of the right pane, above the next slide and selected preview. Live indicators distinguish the slide on output from the slide selected for preview. Current and next slide text help operators prepare the next cue. Monitoring follows the first active desktop output; some controls affect multiple active outputs.
 
 ### Find and present scripture
 
@@ -93,7 +93,7 @@ The sections above are draft product copy grounded in the implemented app. Keep 
 
 - **Availability:** Development preview installed through Xcode. No App Store listing, download link, release date, or pricing has been supplied. Do not show a working download or purchase button yet.
 - **Evidence:** The user has confirmed MacBook Air discovery, connection, and live presentation control after updating FreeShow, reportedly to approximately 1.6.7. This is user-reported evidence, not a verified version-support matrix.
-- **Preview status:** The missing slide grid was traced to a PDF deck: the earlier build only previewed native shows. PDF page previews and direct selection are now implemented. A read-only request to the user’s desktop returned all 43 page images, and the Swift service decoded that captured response successfully. The rebuilt iPad UI still needs user confirmation.
+- **Preview status:** The missing slide grid was traced to a PDF deck: the earlier build only previewed native shows. PDF page previews and direct selection are now implemented. A read-only request to the user’s desktop returned all 43 page images, and the Swift service decoded that captured response successfully. The user subsequently confirmed the PDF previews are working on the iPad.
 - **Validation:** 190 automated checks and simulator builds pass. Full scripture, media, multiple-output, accessibility, network-interruption, and extended-service acceptance remain pending.
 - **Scope:** Presentation editing, uploads, media-library management, cloud sync, and internet-based remote control are not implemented product features.
 - **Relationship and licensing:** Describe this as a companion for FreeShow. Official endorsement, App Store distribution, pricing, and the repository's own open-source license have not been established; do not claim them.

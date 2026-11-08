@@ -1,5 +1,9 @@
 # Development log
 
+## November 7, 2026 — Confirmed PDF previews; live output priority
+
+The user confirmed PDF previews are working on the iPad. Updated the right pane to pin the current live slide image and status above the independently scrolling next-slide and selected-preview controls. PDF pages use their rendered image; native slides use a rendered thumbnail when available and text otherwise. Stale/disconnected state hides the live image rather than presenting it as current. The same hierarchy applies to the compact Live & preview pane.
+
 ## November 7, 2026 — PDF slide-grid diagnosis and implementation
 
 The user confirmed the empty pane said PDF selected. A read-only RemoteShow diagnostic verified a live 43-page PDF, explaining why native-show-only previews did not appear. The desktop returned get_pdf_thumbnails as {path, pages}, with 43 JPEG data URLs at requested width 480. The captured response passes decoding through the Swift presentation service. No live presentation commands were sent during diagnosis.

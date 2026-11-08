@@ -36,7 +36,7 @@ struct OperatorView: View {
                                 Divider()
                                 slides.frame(maxWidth: .infinity)
                                 Divider()
-                                ScrollView { liveControls.padding() }.frame(width: max(290, geometry.size.width * 0.28))
+                                rightPane.frame(width: max(290, geometry.size.width * 0.28))
                             }
                         } else {
                             VStack(spacing: 0) {
@@ -45,7 +45,7 @@ struct OperatorView: View {
                                 }.pickerStyle(.segmented).padding(.horizontal).padding(.bottom, 8)
                                 if compactPane == 0 { playlist }
                                 else if compactPane == 1 { slides }
-                                else { ScrollView { liveControls.padding() } }
+                                else { rightPane }
                             }
                         }
                     }
@@ -226,14 +226,35 @@ struct OperatorView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Slide \(slide.id.index + 1). \(slide.text). \(live ? "Live." : "") \(selected ? "Preview selected." : "") \(slide.isDisabled ? "Disabled." : "")")
     }
+    private var rightPane: some View {
+        VStack(spacing: 0) {
+            liveOutput.padding()
+            Divider()
+            ScrollView { liveControls.padding() }
+        }
+    }
+    private var liveOutput: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("LIVE OUTPUT", systemImage: "dot.radiowaves.left.and.right")
+                .font(.caption.weight(.bold)).foregroundStyle(store.isStale ? Color.secondary : .green)
+            Text(outputLabel).font(.headline)
+            if !store.isStale, let slide = store.currentSlide {
+                if let data = slide.thumbnail ?? store.thumbnails[slide.id], let image = UIImage(data: data) {
+                    Image(uiImage: image).resizable().scaledToFit().frame(maxHeight: 260)
+                        .frame(maxWidth: .infinity)
+                        .background(.black, in: RoundedRectangle(cornerRadius: 8))
+                        .accessibilityLabel("Current live \(slide.id.layoutID == Presentation.pdfLayoutID ? "PDF page" : "slide") \(slide.id.index + 1)")
+                } else {
+                    previewBox(slide.text, caption: "CURRENT · SLIDE \(slide.id.index + 1)")
+                }
+                Text(store.livePresentation?.name ?? "").font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            } else if store.isStale {
+                Text("Live preview unavailable until the desktop reconnects.").font(.callout).foregroundStyle(.secondary)
+            }
+        }.frame(maxWidth: .infinity, alignment: .leading)
+    }
     private var liveControls: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text("LIVE OUTPUT").font(.caption.weight(.bold)).foregroundStyle(.secondary)
-            Text(outputLabel).font(.headline)
-            if let slide = store.currentSlide {
-                Text(store.livePresentation?.name ?? "").font(.caption).foregroundStyle(.secondary)
-                previewBox(slide.text, caption: "CURRENT · SLIDE \(slide.id.index + 1)")
-            }
             if let next = store.nextSlide { previewBox(next.text, caption: "NEXT · SLIDE \(next.id.index + 1)") }
             Text("Monitor: first active output. Commands may affect all active outputs; desktop locks apply.").font(.caption).foregroundStyle(.secondary)
             Divider()

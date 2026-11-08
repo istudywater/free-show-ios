@@ -20,6 +20,8 @@ The last successful host/port is remembered. Passwords remain in memory unless S
 
 ## Browse and present
 
+The right pane pins the live slide image and output status at the top. Next-slide information and the selected preview scroll beneath it. The compact Live & preview pane uses the same hierarchy.
+
 PDF decks now have a rendered page grid. Select the PDF or follow a live PDF, then use the same Tap to live / long-press controls as native slides. Current-page state follows desktop Previous/Next. Use Reload PDF pages after editing a file. The app requests 480-pixel-wide JPEG previews, with limits of 500 pages and 24 MB of decoded images. When starting a different PDF, it must still belong to the active desktop project; current-PDF page-count changes reject the old selection and require reload. Native-show validation still compares fresh slide data. PDF content changes with the same page count require an explicit reload.
 
 - Choose a project to browse locally. **Follow desktop** tracks its active project; **Select on desktop** explicitly changes that project on the desktop.
