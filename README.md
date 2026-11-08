@@ -6,14 +6,14 @@ Native SwiftUI operator console for FreeShow. The desktop renders presentations;
 
 The foundation, connection prototype, early scripture increment, and implementation work for Milestones 3–7 are complete. The app now includes discovery, remembered connections, optional Keychain credentials, automatic reconnect/synchronization, ordered projects/slides, an adaptive operator interface, and an offline demo.
 
-**Ready for Xcode simulator review.** Xcode 27.1 simulator builds pass for arm64/x86_64. Automated suites pass **167 checks** (52 connection, 56 scripture, 59 operator), including 200 sequential navigation operations. Live FreeShow compatibility, physical-iPad permissions, and real-service/extended soak acceptance still require testing. No supported desktop version or live-service reliability guarantee is claimed yet.
+**Ready for Xcode simulator review.** Xcode 27.1 simulator builds pass for arm64/x86_64. Automated suites pass **182 checks** (52 connection, 59 scripture, 71 operator), including 200 sequential navigation operations. Live FreeShow compatibility, physical-iPad permissions, and real-service/extended soak acceptance still require testing. No supported desktop version or live-service reliability guarantee is claimed yet.
 
 ## Open and review in Xcode
 
 1. Open `FreeShowRemote.xcodeproj` and choose the **FreeShowRemote** scheme.
 2. Select an installed **iPad simulator**, then **Product → Run**. The minimum app OS is iPadOS 17; use Xcode 16+ with Swift 6 and an installed iOS SDK/runtime.
 3. Tap **Try offline demo** in Operator or Connection. The demo supplies a sample service, slides, live state, and sample scripture text without any network connection.
-4. Select service items and slides, including the sample PDF item; check that preview differs from the live indicator. Present requires confirmation. Previous/Next/Clear/Restore stay in a persistent control dock. Rotate to landscape to see the service, slide grid, and live/preview panels side by side.
+4. Select service items and slides, including the sample PDF item; check that preview differs from the live indicator. Tap to live starts off: taps preview and a half-second hold presents; enabling it makes a single tap present. The bottom dock has Tap to live and Clear output / Go live on the left, Previous/Next on the right, and secondary actions under More. Rotate to landscape to see the service, slide grid, and live/preview panels side by side.
 5. Open Scripture and use `Sample 1:1–3` in demo mode. The text is explicitly demonstration content, not a Bible translation.
 6. Review dark/light appearance, larger accessibility text, portrait/landscape, and smaller iPad windows. The [simulator and device checklist](docs/operator-guide.md) covers the full review.
 
