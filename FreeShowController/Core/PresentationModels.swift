@@ -17,14 +17,22 @@ struct ProjectItem: Identifiable, Equatable, Sendable {
     var canStartByName: Bool { ["image", "video", "pdf", "audio", "overlay", "player"].contains(kind) && !(explicitName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true) }
     var layoutID: String? = nil
     var index: Int = 0
-    var canPreview: Bool { kind == "show" && presentationID != nil }
+    var canPreview: Bool { ["show", "pdf"].contains(kind) && presentationID != nil }
+    var previewLayoutID: String? { kind == "pdf" ? Presentation.pdfLayoutID : layoutID }
 }
 
 struct Presentation: Identifiable, Equatable, Sendable {
+    static let pdfLayoutID = "__pdf_pages__"
     let id: String
     let name: String
     let layoutID: String
     let slides: [Slide]
+}
+
+struct PDFOutput: Equatable, Sendable {
+    let path: String
+    let page: Int
+    let pages: Int
 }
 
 struct Slide: Identifiable, Equatable, Sendable {

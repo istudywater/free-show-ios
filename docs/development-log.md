@@ -1,5 +1,11 @@
 # Development log
 
+## November 7, 2026 — PDF slide-grid diagnosis and implementation
+
+The user confirmed the empty pane said PDF selected. A read-only RemoteShow diagnostic verified a live 43-page PDF, explaining why native-show-only previews did not appear. The desktop returned get_pdf_thumbnails as {path, pages}, with 43 JPEG data URLs at requested width 480. The captured response passes decoding through the Swift presentation service. No live presentation commands were sent during diagnosis.
+
+Implemented bounded PDF page loading/caching, embedded page images, automatic live-PDF following, direct page selection using play_media with zero-based index and actual pageCount, current-page synchronization, explicit reload after edits, active-project validation when starting another PDF, and stale-page-count rejection. Removed the old native-only empty-pane explanation. Regression validation now passes 79 operator checks (190 total with 52 connection and 59 scripture). Device UI confirmation remains pending.
+
 ## November 7, 2026 — FreeShow Controller branding
 
 Renamed the app, source directory, Xcode project/target/shared scheme, app entry point, user-facing labels, scripts, and documentation to FreeShow Controller. Retained bundle identity and credential/preferences keys to update the existing iPad installation. Added a generated orange/cyan presentation-screen icon and Smixx-style startup artwork, integrated through the asset catalog and LaunchScreen.storyboard. Revision 2 centers the logo and wordmark inside the charcoal panel. Original artwork and exact prompts are retained in Design/Brand. All 182 checks and foundation checks pass after the rename. The simulator build confirms the new display name, icon metadata, asset catalog, and compiled launch storyboard.

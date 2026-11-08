@@ -107,7 +107,11 @@ final class OperatorStore: ObservableObject {
         return selectedProject?.items.filter { $0.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == name }.count == 1
     }
     var selectedItem: ProjectItem? { selectedProject?.items.first { $0.id == selectedItemID } }
-    var currentReference: SlideReference? { if case .live(let ref) = snapshot.output { ref } else { nil } }
+    var currentReference: SlideReference? {
+        if let pdf = client.pdfOutput { return SlideReference(presentationID: pdf.path, layoutID: Presentation.pdfLayoutID, index: pdf.page) }
+        if case .live(let ref) = snapshot.output { return ref }
+        return nil
+    }
     var previewSlide: Slide? { presentation?.slides.first { $0.id == selectedSlide } }
     var currentSlide: Slide? { livePresentation?.slides.first { $0.id == currentReference } }
     var nextSlide: Slide? {
@@ -191,7 +195,7 @@ final class OperatorStore: ObservableObject {
             message = item.canStartByName ? "\(item.kind.capitalized) selected. Start item requires confirmation and a unique name in the active desktop project." : "\(item.kind.capitalized) items are listed for context. This item needs desktop control or a unique supported media name."
             return
         }
-        previewTarget = (id, item.layoutID); queuedPreview = previewTarget; drainLoads()
+        previewTarget = (id, item.previewLayoutID); queuedPreview = previewTarget; drainLoads()
     }
     func selectSlide(_ slide: Slide) {
         guard !isSending, !slide.isDisabled else { return }
@@ -253,6 +257,7 @@ final class OperatorStore: ObservableObject {
     func retryPreview() {
         guard session.isReady else { return }
         previewError = nil; thumbnailMessage = nil
+        client.invalidatePDFPreview()
         pauseAutomaticThumbnails = false; thumbnailAttempts = []; thumbnailGeneration = UUID()
         thumbnails = [:]
         if let target = previewTarget { queuedPreview = target; drainLoads() }
@@ -269,6 +274,7 @@ final class OperatorStore: ObservableObject {
         thumbnailQueue.removeAll { $0 == reference }
     }
     private func queueThumbnail(_ reference: SlideReference) {
+        guard reference.layoutID != Presentation.pdfLayoutID else { return }
         guard session.isReady, !pauseAutomaticThumbnails, thumbnails[reference] == nil,
               !thumbnailAttempts.contains(reference), !thumbnailQueue.contains(reference) else { return }
         thumbnailQueue.append(reference)
@@ -429,7 +435,7 @@ final class OperatorStore: ObservableObject {
         }
         if let selectedItemID {
             if let item = selectedProject?.items.first(where: { $0.id == selectedItemID }) {
-                if item.canPreview && (item.presentationID != previewTarget?.0 || item.layoutID != previewTarget?.1) { clearPreview() }
+                if item.canPreview && (item.presentationID != previewTarget?.0 || item.previewLayoutID != previewTarget?.1) { clearPreview() }
             } else { clearPreview() }
         }
         if let ref = currentReference {

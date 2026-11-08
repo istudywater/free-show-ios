@@ -89,6 +89,10 @@ final class DemoTransport: RemoteTransport {
         case "get_show": result = library[data["id"].string ?? ""]
         case "get_output": result = output
         case "get_slide_thumbnail": result = .string("")
+        case "get_pdf_thumbnails":
+            // Tiny original fixture image; real PDF pages are rendered by the desktop.
+            let image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII="
+            result = .object(["path": data["path"], "pages": .array([.string(image), .string(image)])])
         case "get_cleared":
             let cleared = output["slide"] == .null
             result = .object(Dictionary(uniqueKeysWithValues: ["all", "background", "slide", "overlays", "audio", "slideTimers"].map { ($0, .bool(cleared)) }))
@@ -109,6 +113,8 @@ final class DemoTransport: RemoteTransport {
             if data["value"].string == "Announcements document" {
                 output = .object(["slide": .object(["type": .string("pdf"), "id": .string("demo-document"), "name": .string("Announcements document"), "page": .number(0), "pages": .number(2)])])
             }
+        case "play_media":
+            output = .object(["slide": .object(["type": .string("pdf"), "id": data["path"], "page": data["index"], "pages": data["data"]["pageCount"], "name": .string("Announcements document")])])
         case "clear_all": restored = output; output = .object(["slide": .null])
         case "restore_output": output = restored
         case "start_scripture": output = .object(["slide": .object(["id": .string("temp")])])

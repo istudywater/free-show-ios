@@ -48,6 +48,10 @@ Choose an individual translation from the desktop Bible library. Search a refere
 
 Scripture shares the operator's authenticated connection. Available content depends on the Bibles and any provider access configured in FreeShow Desktop. Bible collections and cross-chapter selections are not currently supported.
 
+### Preview PDF decks
+
+Browse a rendered page grid for a PDF slide deck, follow its live page, and select pages using the same tap-to-live or long-press controls as native shows. Previous and Next stay synchronized with desktop PDF navigation. Reload page previews after editing the PDF on the desktop.
+
 ### Start supported media
 
 Start existing image, video, PDF, audio, overlay, and player items when they have a unique explicit name in the active desktop project. FreeShow renders the media, and Previous / Next can navigate PDF pages. Ambiguous, unnamed, or unsupported items remain desktop-operated; the app is not a media editor.
@@ -89,8 +93,8 @@ The sections above are draft product copy grounded in the implemented app. Keep 
 
 - **Availability:** Development preview installed through Xcode. No App Store listing, download link, release date, or pricing has been supplied. Do not show a working download or purchase button yet.
 - **Evidence:** The user has confirmed MacBook Air discovery, connection, and live presentation control after updating FreeShow, reportedly to approximately 1.6.7. This is user-reported evidence, not a verified version-support matrix.
-- **Preview status:** The user reported missing slide previews. Image retries, automatic live-show loading, compatibility handling, and diagnostic messages have been improved; the rebuilt app still needs device retesting to confirm the original issue is resolved.
-- **Validation:** 182 automated checks and simulator builds pass. Full scripture, media, multiple-output, accessibility, network-interruption, and extended-service acceptance remain pending.
+- **Preview status:** The missing slide grid was traced to a PDF deck: the earlier build only previewed native shows. PDF page previews and direct selection are now implemented. A read-only request to the user’s desktop returned all 43 page images, and the Swift service decoded that captured response successfully. The rebuilt iPad UI still needs user confirmation.
+- **Validation:** 190 automated checks and simulator builds pass. Full scripture, media, multiple-output, accessibility, network-interruption, and extended-service acceptance remain pending.
 - **Scope:** Presentation editing, uploads, media-library management, cloud sync, and internet-based remote control are not implemented product features.
 - **Relationship and licensing:** Describe this as a companion for FreeShow. Official endorsement, App Store distribution, pricing, and the repository's own open-source license have not been established; do not claim them.
 - **Artwork:** Use the supplied icon and revision-2 startup artwork. The generated assets and exact prompts are recorded in `Design/Brand/Branding.md`. Avoid using screenshots containing private network addresses, connection passwords, or unapproved presentation content.

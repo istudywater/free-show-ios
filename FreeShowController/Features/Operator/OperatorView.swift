@@ -200,7 +200,7 @@ struct OperatorView: View {
                     }
                 }
             } else {
-                ContentUnavailableView(store.selectedItem?.canStartByName == true ? "\(store.selectedItem?.kind.capitalized ?? "Media") selected" : "Choose a presentation", systemImage: "square.grid.2x2", description: Text(store.selectedItem?.canStartByName == true ? "Use Start item in the dock after selecting this project on the desktop. FreeShow renders the media; PDF pages use Next/Previous. Native shows have the slide grid." : "Select a native show from the service to see its ordered slides. Empty shows and unsupported types have no slide navigator."))
+                ContentUnavailableView(store.isLoading ? "Loading slides…" : store.previewError != nil ? "Preview unavailable" : "Choose a presentation", systemImage: "square.grid.2x2", description: Text(store.isLoading ? "Waiting for FreeShow to return the slide or PDF page previews." : store.previewError != nil ? "Use Retry preview above to request the pages again." : store.selectedItem?.canStartByName == true ? "Use the selected item's Start action in Live & preview. Select a native show or PDF to browse individual pages." : "Select a native show or PDF from the service to see its slides."))
             }
         }
     }
@@ -245,8 +245,13 @@ struct OperatorView: View {
                 Button("Present selected slide…") {
                     intent = PresentIntent(slide: slide.id, presentation: presentation); confirmPresent = true
                 }.buttonStyle(.borderedProminent).controlSize(.large).disabled(!store.canControl || slide.isDisabled)
-                Button(store.thumbnailLoading ? "Loading image…" : "Load rendered preview") { store.loadSelectedThumbnail() }
-                    .disabled(store.thumbnailLoading || store.phase != .connected || store.thumbnails[slide.id] != nil)
+                if presentation.layoutID == Presentation.pdfLayoutID {
+                    Button("Reload PDF pages") { store.retryPreview() }.disabled(store.isLoading || store.phase != .connected)
+                    Text("Reload after changing the PDF on the desktop.").font(.caption).foregroundStyle(.secondary)
+                } else {
+                    Button(store.thumbnailLoading ? "Loading image…" : "Load rendered preview") { store.loadSelectedThumbnail() }
+                        .disabled(store.thumbnailLoading || store.phase != .connected || store.thumbnails[slide.id] != nil)
+                }
                 Text("Rendering depends on desktop output availability. Text remains the fallback.").font(.caption).foregroundStyle(.secondary)
             } else if let item = store.selectedItem {
                 Text(item.name).font(.headline)
@@ -304,7 +309,7 @@ struct OperatorView: View {
     }
     private var outputButton: some View {
         Button {
-            if store.outputIsClear, let item = store.selectedItem, item.canStartByName {
+            if store.outputIsClear, store.previewSlide == nil, let item = store.selectedItem, item.canStartByName {
                 mediaIntent = ProjectItemIntent(projectID: store.selectedProjectID, item: item); confirmMedia = true
             } else { store.toggleOutput() }
         } label: {
@@ -333,7 +338,9 @@ struct OperatorView: View {
         Text(text).font(.caption2.bold()).foregroundStyle(color).padding(.horizontal, 5).padding(.vertical, 3).background(color.opacity(0.12), in: Capsule())
     }
     private func image(for ref: SlideReference) -> Image? {
-        guard let data = store.thumbnails[ref], let image = UIImage(data: data) else { return nil }
+        let embedded = store.presentation?.slides.first(where: { $0.id == ref })?.thumbnail
+            ?? store.livePresentation?.slides.first(where: { $0.id == ref })?.thumbnail
+        guard let data = store.thumbnails[ref] ?? embedded, let image = UIImage(data: data) else { return nil }
         return Image(uiImage: image)
     }
     private var outputLabel: String {

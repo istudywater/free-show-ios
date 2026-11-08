@@ -102,6 +102,8 @@ final class RemotePresentationService: ConnectionService, PresentationService, O
     private(set) var outputItemID: String?
     private(set) var clearance: ClearedStatus?
     private(set) var slideLayerCleared: Bool?
+    private(set) var pdfOutput: PDFOutput?
+    private var pdfPreview: Presentation?
     private(set) var latest = PresentationSnapshot(projects: [], activeProjectID: nil, output: .unknown, receivedAt: .distantPast)
     var onChange: ((PresentationSnapshot) -> Void)?
     private let session: RemoteSession
@@ -121,6 +123,7 @@ final class RemotePresentationService: ConnectionService, PresentationService, O
         _ = session.observeDisconnect { [weak self] error in
             guard let self else { return }
             self.state = .disconnected; self.clearance = nil; self.outputItemID = nil; self.slideLayerCleared = nil
+            self.pdfOutput = nil; self.pdfPreview = nil
             self.latest = PresentationSnapshot(projects: self.latest.projects, activeProjectID: self.latest.activeProjectID,
                 output: .unknown, receivedAt: self.latest.receivedAt)
             self.onChange?(self.latest)
@@ -130,6 +133,7 @@ final class RemotePresentationService: ConnectionService, PresentationService, O
     }
     func clearStoredData() {
         rawProjects = .object([:]); shows = .object([:]); clearance = nil; outputItemID = nil; slideLayerCleared = nil
+        pdfOutput = nil; pdfPreview = nil
         latest = PresentationSnapshot(projects: [], activeProjectID: nil, output: .unknown, receivedAt: .distantPast)
         publish()
     }
@@ -163,6 +167,7 @@ final class RemotePresentationService: ConnectionService, PresentationService, O
         try check(token)
         guard let flags = try? JSONDecoder().decode(ClearedStatus.self, from: JSONEncoder().encode(cleared)) else { throw OperatorError.unsupportedResponse }
         if revision == version {
+            pdfOutput = Self.pdfOutput(out)
             outputItemID = out["slide"]["id"].string ?? out["background"]["path"].string ?? out["background"]["id"].string
             clearance = flags
             slideLayerCleared = out.object?["slide"].map { $0 == .null } ?? flags.slide
@@ -180,12 +185,42 @@ final class RemotePresentationService: ConnectionService, PresentationService, O
             else { showWaiters.removeFirst().resume() }
         }
         try Task.checkCancellation()
+        if layoutID == Presentation.pdfLayoutID { return try await pdfPresentation(path: id) }
         var value = try await query("get_show", fields: ["id": .string(id)])
         // The library is authoritative for titles; some cached show bodies omit one.
         if var body = value.object, body["name"]?.string == nil, let name = shows[id]["name"].string {
             body["name"] = .string(name); value = .object(body)
         }
         return try PresentationDecoder.presentation(value, id: id, layoutID: layoutID)
+    }
+    func invalidatePDFPreview() { pdfPreview = nil }
+    private func pdfPresentation(path: String) async throws -> Presentation {
+        if let cached = pdfPreview, cached.id == path { return cached }
+        let value = try await query("get_pdf_thumbnails", fields: ["path": .string(path), "data": .object(["width": .number(480)])])
+        if let returnedPath = value["path"].string, returnedPath != path { throw OperatorError.changedPresentation }
+        guard let pages = value["pages"].array ?? value.array, !pages.isEmpty, pages.count <= 500 else {
+            throw OperatorError.incompletePresentation("FreeShow returned no PDF pages, or the PDF exceeds 500 pages")
+        }
+        var total = 0
+        let slides = try pages.enumerated().map { index, value -> Slide in
+            guard let string = value.string, string.count < 4_000_000 else { throw OperatorError.unsupportedResponse }
+            let encoded = string.hasPrefix("data:") ? String(string.split(separator: ",", maxSplits: 1).last ?? "") : string
+            guard let image = Data(base64Encoded: encoded), !image.isEmpty else { throw OperatorError.unsupportedResponse }
+            total += image.count
+            guard total <= 24_000_000 else { throw OperatorError.incompletePresentation("PDF preview images exceed the device preview limit") }
+            return Slide(id: SlideReference(presentationID: path, layoutID: Presentation.pdfLayoutID, index: index),
+                         text: "Page \(index + 1)", thumbnail: image)
+        }
+        let name = URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent
+        let result = Presentation(id: path, name: name, layoutID: Presentation.pdfLayoutID, slides: slides)
+        pdfPreview = result
+        return result
+    }
+    private static func pdfOutput(_ out: JSONValue) -> PDFOutput? {
+        let slide = out["slide"]
+        guard slide["type"].string == "pdf", let path = slide["id"].string,
+              let page = slide["page"].nonnegativeInt, let pages = slide["pages"].int else { return nil }
+        return PDFOutput(path: path, page: page, pages: pages)
     }
     func thumbnail(for slide: SlideReference) async throws -> Data? {
         let result = try await query("get_slide_thumbnail", fields: ["showId": .string(slide.presentationID),
@@ -208,6 +243,20 @@ final class RemotePresentationService: ConnectionService, PresentationService, O
             "layoutId": .string(slide.layoutID), "index": .number(Double(slide.index))])
     }
     func presentValidated(_ slide: SlideReference, preview: Presentation) async throws {
+        if preview.layoutID == Presentation.pdfLayoutID {
+            guard slide.presentationID == preview.id, preview.slides.contains(where: { $0.id == slide && !$0.isDisabled }) else { throw OperatorError.missingSlide }
+            let out = try await query("get_output")
+            if let current = Self.pdfOutput(out), current.path == preview.id {
+                guard current.pages == preview.slides.count else { invalidatePDFPreview(); throw OperatorError.changedPresentation }
+            } else {
+                let (projects, library) = try await readLibrary()
+                let active = try PresentationDecoder.projects(projects, shows: library).first { $0.id == latest.activeProjectID }
+                guard active?.items.contains(where: { $0.kind == "pdf" && $0.presentationID == preview.id }) == true else { throw OperatorError.inactiveProject }
+            }
+            try await command("play_media", fields: ["path": .string(preview.id), "index": .number(Double(slide.index)),
+                "data": .object(["pageCount": .number(Double(preview.slides.count))])])
+            return
+        }
         let fresh = try await presentation(id: preview.id, layoutID: preview.layoutID)
         guard fresh.slides == preview.slides, fresh.slides.contains(where: { $0.id == slide && !$0.isDisabled }) else { throw OperatorError.changedPresentation }
         try await present(slide)
@@ -273,6 +322,7 @@ final class RemotePresentationService: ConnectionService, PresentationService, O
                     output: latest.output, receivedAt: Date(), desktopSelectionID: latest.desktopSelectionID)
             case "OUT_DATA":
                 revision += 1; clearance = nil
+                pdfOutput = Self.pdfOutput(message.data)
                 slideLayerCleared = message.data.object?["slide"].map { $0 == .null }
                 outputItemID = message.data["slide"]["id"].string ?? message.data["background"]["path"].string ?? message.data["background"]["id"].string
                 latest = PresentationSnapshot(projects: latest.projects, activeProjectID: latest.activeProjectID,

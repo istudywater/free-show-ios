@@ -6,7 +6,7 @@ Native SwiftUI operator console for FreeShow. The desktop renders presentations;
 
 The foundation, connection prototype, early scripture increment, and implementation work for Milestones 3–7 are complete. The app now includes discovery, remembered connections, optional Keychain credentials, automatic reconnect/synchronization, ordered projects/slides, an adaptive operator interface, and an offline demo.
 
-**Ready for Xcode simulator review.** Xcode 27.1 simulator builds pass for arm64/x86_64. Automated suites pass **182 checks** (52 connection, 59 scripture, 71 operator), including 200 sequential navigation operations. Live FreeShow compatibility, physical-iPad permissions, and real-service/extended soak acceptance still require testing. No supported desktop version or live-service reliability guarantee is claimed yet.
+**Ready for Xcode simulator review.** Xcode 27.1 simulator builds pass for arm64/x86_64. Automated suites pass **190 checks** (52 connection, 59 scripture, 79 operator), including 200 sequential navigation operations. Live FreeShow compatibility, physical-iPad permissions, and real-service/extended soak acceptance still require testing. No supported desktop version or live-service reliability guarantee is claimed yet.
 
 ## Branding
 
@@ -53,7 +53,7 @@ If needed, use `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` before
 
 ## Scope and limitations
 
-- Native shows and scripture are controllable. Supported existing image/video/PDF/audio/overlay/player items can be started by a confirmed action when uniquely named in the active desktop project. Ambiguous, unnamed or unsupported items remain desktop-operated. Embedded media in a native show also renders on the desktop.
+- Native shows, PDF pages, and scripture are controllable. PDFs have a rendered page grid with direct page selection and live-page tracking. Reload PDF pages after editing the desktop file. Supported existing image/video/PDF/audio/overlay/player items can be started by a confirmed action when uniquely named in the active desktop project. Ambiguous, unnamed or unsupported items remain desktop-operated. Embedded media in a native show also renders on the desktop.
 - Live indicators monitor the **first active output**. Broad controls may affect multiple active outputs. Output locks, cached restore behavior, and differences between outputs need live acceptance testing.
 - Thumbnails load lazily and fall back to readable text. Desktop push updates are combined with polling for content that is not consistently broadcast.
 - Local preview and desktop-reported live state remain separate. A command reply is not treated as proof that output changed. A slide is re-fetched/validated before Present, but FreeShow provides no atomic revision/locking contract against another operator editing immediately afterward.

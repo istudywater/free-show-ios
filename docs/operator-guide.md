@@ -20,6 +20,8 @@ The last successful host/port is remembered. Passwords remain in memory unless S
 
 ## Browse and present
 
+PDF decks now have a rendered page grid. Select the PDF or follow a live PDF, then use the same Tap to live / long-press controls as native slides. Current-page state follows desktop Previous/Next. Use Reload PDF pages after editing a file. The app requests 480-pixel-wide JPEG previews, with limits of 500 pages and 24 MB of decoded images. When starting a different PDF, it must still belong to the active desktop project; current-PDF page-count changes reject the old selection and require reload. Native-show validation still compares fresh slide data. PDF content changes with the same page count require an explicit reload.
+
 - Choose a project to browse locally. **Follow desktop** tracks its active project; **Select on desktop** explicitly changes that project on the desktop.
 - Choose a native show to load its ordered layout. Repeated project entries and parent/child slides keep their occurrence positions. Existing image/video/PDF/audio/overlay/player items with a unique explicit name can be started from the active desktop project using **Start item**, after confirmation and a fresh project/name check. Choose **Select on desktop** first if browsing another project. Ambiguous, unnamed or unsupported entries remain desktop-operated. Native shows containing media still render through the desktop engine.
 - The live show’s slide grid loads on connection. **Tap to live** starts off: tap to preview, or hold a slide for half a second to present it. Turn it on for single-tap live changes. Every activation still validates the layout; disabled slides cannot be presented. **Present selected slide** retains confirmation, and VoiceOver provides a **Go live** action on each slide.
@@ -55,7 +57,7 @@ The protocol has no global revision cursor or atomic edit/present transaction. T
 ./scripts/build-ipad.sh
 ```
 
-Results: 52 connection + 59 scripture + 71 operator checks = **182 checks**. Operator coverage includes a 200-operation sequential navigation stress run, rapid-tap suppression, revalidation before Present, foreground refresh, native/scripture uncertain-send recovery, credential preferences, independent thumbnail/live channels, update stream termination, stale callback protection, and push/query ordering. Tests use synthetic data, isolated preferences and an injected credential vault, not real Keychain entries or live computers.
+Results: 52 connection + 59 scripture + 79 operator checks = **190 checks**. Operator coverage includes a 200-operation sequential navigation stress run, rapid-tap suppression, revalidation before Present, foreground refresh, native/scripture uncertain-send recovery, credential preferences, independent thumbnail/live channels, update stream termination, stale callback protection, and push/query ordering. Tests use synthetic data, isolated preferences and an injected credential vault, not real Keychain entries or live computers.
 
 The app builds with Xcode 27.1 for both simulator architectures. Host checks typecheck domain/services/state and Bonjour/Keychain sources; Xcode compiles the Socket.IO adapter and SwiftUI views. See development-log.md for simulator launch/visual verification details. These results do not replace device/server/long-duration acceptance.
 

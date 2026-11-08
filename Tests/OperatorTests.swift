@@ -357,6 +357,36 @@ struct OperatorTests {
         interactive.tapSlide(thirdSlide)
         expect(interactionFixture.count("API:index_select_slide") == beforeOfflineTap, "Slide gestures cannot send when disconnected")
 
+        let pdfFixture = ControlledRemote()
+        let pdfStore = OperatorStore(transport: SwitchableRemoteTransport(live: pdfFixture), defaults: defaults, vault: vault, heartbeatInterval: .seconds(60))
+        pdfStore.host = "fixture.local"; pdfStore.connect()
+        try await wait("PDF fixture ready") { pdfStore.phase == .connected && !pdfStore.isLoading }
+        let pdfItem = pdfStore.selectedProject!.items.first(where: { $0.kind == "pdf" })!
+        let nativeReads = pdfFixture.count("API:get_show")
+        pdfStore.selectItem(pdfItem)
+        try await wait("PDF page grid") { pdfStore.presentation?.layoutID == Presentation.pdfLayoutID && !pdfStore.isLoading }
+        expect(pdfStore.presentation!.slides.count == 2 && pdfStore.presentation!.slides.allSatisfy { $0.thumbnail?.isEmpty == false }, "PDF pages carry rendered previews")
+        expect(pdfFixture.count("API:get_show") == nativeReads, "PDF paths never use native get_show")
+        expect(pdfFixture.messages.last(where: { $0.channel == "API:get_pdf_thumbnails" })?.data["data"]["width"] == .number(480), "PDF render resolution is bounded")
+        let pdfSecond = pdfStore.presentation!.slides[1]
+        pdfStore.tapSlide(pdfSecond)
+        expect(pdfFixture.count("API:play_media") == 0, "Protected PDF tap only previews")
+        pdfStore.holdSlide(pdfSecond)
+        try await wait("PDF direct page") { !pdfStore.isSending && pdfStore.currentReference == pdfSecond.id }
+        let pageCommand = pdfFixture.messages.last(where: { $0.channel == "API:play_media" })!
+        expect(pageCommand.data["index"] == .number(1) && pageCommand.data["data"]["pageCount"] == .number(2), "PDF direct presentation uses zero-based page and real page count")
+        pdfStore.send(.previous)
+        try await wait("PDF previous synchronizes") { !pdfStore.isSending && pdfStore.currentReference?.index == 0 }
+        expect(pdfStore.currentSlide?.id.index == 0, "Live PDF page indicator follows desktop navigation")
+        pdfStore.singleTapLive = true; pdfStore.tapSlide(pdfSecond)
+        try await wait("PDF tap live") { !pdfStore.isSending && pdfStore.currentReference?.index == 1 }
+        expect(pdfFixture.count("API:play_media") == 2, "PDF supports single-tap live mode")
+        let pdfCaptures = pdfFixture.count("API:get_pdf_thumbnails")
+        pdfStore.retryPreview()
+        try await wait("PDF explicit reload") { !pdfStore.isLoading && pdfFixture.count("API:get_pdf_thumbnails") > pdfCaptures }
+        expect(pdfStore.previewError == nil, "PDF reload recovers without native-show errors")
+        pdfStore.disconnect()
+
         print("Passed \(checks) operator checks.")
     }
 }
