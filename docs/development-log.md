@@ -1,5 +1,14 @@
 # Development log
 
+## November 7, 2026 — Live device follow-up: previews and operator controls
+
+The user reports successful Mac discovery and presentation control after updating FreeShow (approximately 1.6.7), with previews still unavailable. Reviewed the 1.6.7 get_show implementation and desktop capture behavior: thumbnails depend on an active desktop output. No live payload from the user’s failing show was available.
+
+- Fixed Refresh retaining failed thumbnail attempts; added preview-specific retry, separate content/image diagnostics, and clearing content errors after recovery. Connecting now follows the live show into the slide grid. Empty project layouts use the active layout, single-layout shows can omit activeLayout, and missing cached show titles use library metadata. Explicit invalid layouts and missing slides remain errors.
+- Moved Previous/Next to bottom right. Bottom left contains Tap to live, then a Clear output / Go live button; secondary restore and confirmed clear actions are in More. Go live presents the selected slide or restores cached output; supported media retains its explicit start action.
+- Tap to live starts off: tap previews, a half-second hold presents. When enabled, a single tap presents. All gesture paths validate fresh show data, respect disabled/stale/busy state, and never replay commands. Added a VoiceOver Go live action.
+- Operator regression suite passes 71 checks, including automatic live preview, missing-data recovery, image retry, title/layout compatibility, protected/direct gestures and clear/go-live transitions. Device confirmation of the original preview failure remains required.
+
 ## November 7, 2026 — Milestones 3–7 implementation and simulator handoff
 
 The user explicitly authorized completing all remaining milestones without intermediate approval pauses, followed by Xcode simulator review. This supersedes earlier incremental stop/review instructions for this build.

@@ -154,7 +154,7 @@ struct OperatorView: View {
                     }
                 } else { Text("This project has no service items.").foregroundStyle(.secondary) }
             }.listStyle(.plain)
-            Text("Browsing leaves output unchanged. Present or Start item is explicit.").font(.caption).foregroundStyle(.secondary).padding()
+            Text("Choose an item to load its slides. Slide taps follow the Tap to live setting below.").font(.caption).foregroundStyle(.secondary).padding()
         }
     }
     private var slides: some View {
@@ -162,18 +162,34 @@ struct OperatorView: View {
             HStack {
                 VStack(alignment: .leading) {
                     Text(store.presentation?.name ?? "SLIDES").font(.headline)
-                    Text(store.followsLive ? "Following live output" : "Preview selection · output unchanged").font(.caption).foregroundStyle(.secondary)
+                    Text(store.singleTapLive ? "Tap a slide to go live" : "Tap to preview · hold to go live").font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
                 if store.isLoading { ProgressView().accessibilityLabel("Loading slides") }
             }.padding()
+            if let error = store.previewError {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(error).font(.callout).foregroundStyle(.orange)
+                    Button("Retry preview") { store.retryPreview() }.disabled(store.phase != .connected)
+                }.padding(.horizontal).padding(.bottom)
+            }
+            if let message = store.thumbnailMessage {
+                HStack(alignment: .top) {
+                    Text(message).font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Retry images") { store.retryPreview() }.font(.caption).disabled(store.phase != .connected)
+                }.padding(.horizontal).padding(.bottom)
+            }
             if let presentation = store.presentation, !presentation.slides.isEmpty {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 180), spacing: 12)], spacing: 12) {
                             ForEach(presentation.slides) { slide in
-                                Button { store.selectSlide(slide) } label: { slideCard(slide) }
+                                Button { store.tapSlide(slide) } label: { slideCard(slide) }
                                     .buttonStyle(.plain).disabled(slide.isDisabled || store.isSending).id(slide.id)
+                                    .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in store.holdSlide(slide) })
+                                    .accessibilityHint(store.singleTapLive ? "Activates this slide on live output." : "Previews this slide. Hold to activate on live output.")
+                                    .accessibilityAction(named: "Go live") { store.present(PresentIntent(slide: slide.id, presentation: presentation)) }
                                     .onAppear { store.thumbnailVisible(slide.id) }
                                     .onDisappear { store.thumbnailHidden(slide.id) }
                             }
@@ -238,6 +254,9 @@ struct OperatorView: View {
                 if item.canStartByName {
                     Text("A uniquely named item in the active desktop project can be started after confirmation. Its media content is rendered by FreeShow.").font(.callout)
                     if store.selectedProjectID != store.snapshot.activeProjectID { Text("Select this project on the desktop first.").font(.caption).foregroundStyle(.secondary) }
+                    Button("Start selected \(item.kind)…") {
+                        mediaIntent = ProjectItemIntent(projectID: store.selectedProjectID, item: item); confirmMedia = true
+                    }.buttonStyle(.borderedProminent).disabled(!store.canStartSelectedItem)
                 } else { Text("This item needs desktop control or a unique supported media name.").foregroundStyle(.secondary) }
             } else { Text("Choose a slide to preview it before presenting.").foregroundStyle(.secondary) }
             if store.snapshot.receivedAt != .distantPast {
@@ -248,33 +267,53 @@ struct OperatorView: View {
     private var controlDock: some View {
         Group {
             if dynamicTypeSize.isAccessibilitySize {
-                VStack(spacing: 8) { compactControls; utilityControls; presentButton }
+                VStack(spacing: 8) {
+                    HStack { liveTapToggle; outputButton; Spacer() }
+                    HStack { utilityControls; Spacer(); compactControls.frame(maxWidth: 360) }
+                }
             } else {
-                HStack(spacing: 16) {
-                    compactControls.frame(maxWidth: 360)
-                    utilityControls
-                    Spacer(minLength: 0)
-                    presentButton
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 16) {
+                        liveTapToggle.fixedSize()
+                        outputButton.fixedSize()
+                        utilityControls.fixedSize()
+                        Spacer(minLength: 16)
+                        compactControls.frame(width: 320)
+                    }
+                    VStack(spacing: 8) {
+                        HStack { liveTapToggle; outputButton; Spacer(); utilityControls }
+                        HStack { Spacer(); compactControls.frame(maxWidth: 320) }
+                    }
                 }
             }
         }
     }
     private var utilityControls: some View {
         HStack(spacing: 10) {
-            Button("Clear all…", role: .destructive) { confirmClear = true }.frame(minHeight: 44)
-            Button("Restore") { store.send(.restore) }.frame(minHeight: 44)
+            Menu {
+                Button("Restore previous output") { store.send(.restore) }
+                Button("Clear all outputs…", role: .destructive) { confirmClear = true }
+            } label: { Label("More", systemImage: "ellipsis") }.frame(minHeight: 44)
         }.buttonStyle(.bordered).disabled(!store.canControl)
     }
-    private var presentButton: some View {
-        Button(store.selectedItem?.canStartByName == true ? "Start item…" : "Present slide…") {
-            if let item = store.selectedItem, item.canStartByName {
+    private var liveTapToggle: some View {
+        Toggle(isOn: $store.singleTapLive) {
+            Label(store.singleTapLive ? "Tap to live: On" : "Tap to live: Off", systemImage: store.singleTapLive ? "hand.tap.fill" : "hand.tap")
+        }.toggleStyle(.button).frame(minHeight: 44)
+            .accessibilityHint("When off, tap to preview and hold a slide to go live. When on, one tap goes live.")
+    }
+    private var outputButton: some View {
+        Button {
+            if store.outputIsClear, let item = store.selectedItem, item.canStartByName {
                 mediaIntent = ProjectItemIntent(projectID: store.selectedProjectID, item: item); confirmMedia = true
-            } else if let slide = store.previewSlide, let presentation = store.presentation {
-                intent = PresentIntent(slide: slide.id, presentation: presentation); confirmPresent = true
-            }
+            } else { store.toggleOutput() }
+        } label: {
+            Label(store.outputIsClear ? "Go live" : "Clear output", systemImage: store.outputIsClear ? "play.fill" : "clear.fill")
         }
         .frame(minHeight: 44).buttonStyle(.borderedProminent)
-        .disabled(store.selectedItem?.canStartByName == true ? !store.canStartSelectedItem : (!store.canControl || store.previewSlide == nil || store.previewSlide?.isDisabled == true))
+        .tint(store.outputIsClear ? Color.accentColor : .red)
+        .disabled(!store.canControl || (store.outputIsClear && store.selectedItem?.canStartByName == true && !store.canStartSelectedItem))
+        .accessibilityHint(store.outputIsClear ? "Presents the selected slide or restores previous output if no slide is selected." : "Clears active outputs, including audio, backgrounds, overlays, and timers.")
     }
     private var compactControls: some View {
         HStack(spacing: 12) {

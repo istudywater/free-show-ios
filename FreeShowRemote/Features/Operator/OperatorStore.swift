@@ -33,11 +33,14 @@ final class OperatorStore: ObservableObject {
     @Published private(set) var isSending = false
     @Published private(set) var isLoading = false
     @Published private(set) var isDemo = false
-    @Published private(set) var followsLive = false
+    @Published private(set) var followsLive = true
     @Published private(set) var thumbnails: [SlideReference: Data] = [:]
     @Published private(set) var thumbnailLoading = false
     @Published private(set) var message: String?
     @Published private(set) var errorMessage: String?
+    @Published private(set) var previewError: String?
+    @Published private(set) var thumbnailMessage: String?
+    @Published var singleTapLive = false
     let scripture: ScriptureState
     let session: RemoteSession
     private let client: RemotePresentationService
@@ -97,6 +100,7 @@ final class OperatorStore: ObservableObject {
     }
     var canControl: Bool { phase == .connected && session.isReady && snapshot.output != .unknown && !isSending && !scripture.isBusy && !commandOutcomeUnknown }
     var selectedProject: ServiceProject? { snapshot.projects.first { $0.id == selectedProjectID } }
+    var outputIsClear: Bool { client.slideLayerCleared == true || snapshot.output == .cleared }
     var canStartSelectedItem: Bool {
         guard canControl, selectedProjectID == snapshot.activeProjectID, let item = selectedItem, item.canStartByName else { return false }
         let name = item.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -128,7 +132,7 @@ final class OperatorStore: ObservableObject {
         client.clearStoredData(); selectedProjectID = ""
         pauseAutomaticThumbnails = false; visibleSlides = []
         transport.useDemo(demo); isDemo = demo; desired = true; foreground = true
-        target = endpoint; sessionPassword = password; followingProject = true
+        target = endpoint; sessionPassword = password; followingProject = true; followsLive = true
         launchConnection()
     }
     func disconnect() {
@@ -181,7 +185,7 @@ final class OperatorStore: ObservableObject {
     }
     func selectItem(_ item: ProjectItem) {
         guard !isSending else { return }
-        followsLive = false; selectedItemID = item.id; selectedSlide = nil; presentation = nil
+        followsLive = false; selectedItemID = item.id; selectedSlide = nil; presentation = nil; previewError = nil; thumbnailMessage = nil
         guard item.canPreview, let id = item.presentationID else {
             previewTarget = nil
             message = item.canStartByName ? "\(item.kind.capitalized) selected. Start item requires confirmation and a unique name in the active desktop project." : "\(item.kind.capitalized) items are listed for context. This item needs desktop control or a unique supported media name."
@@ -192,6 +196,25 @@ final class OperatorStore: ObservableObject {
     func selectSlide(_ slide: Slide) {
         guard !isSending, !slide.isDisabled else { return }
         followsLive = false; selectedSlide = slide.id
+    }
+    func tapSlide(_ slide: Slide) {
+        selectSlide(slide)
+        if singleTapLive { goLive(slide) }
+    }
+    func holdSlide(_ slide: Slide) {
+        guard !singleTapLive else { return }
+        selectSlide(slide)
+        goLive(slide)
+    }
+    private func goLive(_ slide: Slide) {
+        guard let presentation, presentation.slides.contains(slide), !slide.isDisabled else { return }
+        present(PresentIntent(slide: slide.id, presentation: presentation))
+    }
+    func toggleOutput() {
+        guard canControl else { return }
+        if !outputIsClear { send(.clear) }
+        else if let slide = previewSlide { goLive(slide) }
+        else { send(.restore) }
     }
     func followLive() {
         followsLive = true; selectedItemID = nil
@@ -223,8 +246,19 @@ final class OperatorStore: ObservableObject {
             guard let self else { return }
             do { _ = try await self.client.snapshot() }
             catch { if token == self.generation { self.errorMessage = error.localizedDescription } }
-            if let target = self.previewTarget { self.queuedPreview = target; self.drainLoads() }
+            guard token == self.generation else { return }
+            self.retryPreview()
         }
+    }
+    func retryPreview() {
+        guard session.isReady else { return }
+        previewError = nil; thumbnailMessage = nil
+        pauseAutomaticThumbnails = false; thumbnailAttempts = []; thumbnailGeneration = UUID()
+        thumbnails = [:]
+        if let target = previewTarget { queuedPreview = target; drainLoads() }
+        if let ref = currentReference { queuedLive = ref; drainLoads() }
+        for ref in visibleSlides { queueThumbnail(ref) }
+        if let ref = selectedSlide { queueThumbnail(ref) }
     }
     func thumbnailVisible(_ reference: SlideReference) {
         visibleSlides.insert(reference)
@@ -243,6 +277,7 @@ final class OperatorStore: ObservableObject {
     func loadSelectedThumbnail() {
         guard let ref = selectedSlide, session.isReady, !thumbnailLoading else { return }
         pauseAutomaticThumbnails = false
+        thumbnailMessage = nil
         thumbnailAttempts.remove(ref); queueThumbnail(ref)
     }
     private func drainThumbnails() {
@@ -260,9 +295,14 @@ final class OperatorStore: ObservableObject {
                     if let data, imageToken == self.thumbnailGeneration {
                         if self.thumbnails.count >= 24 || self.thumbnails.values.reduce(0, { $0 + $1.count }) + data.count > 16_000_000 { self.thumbnails.removeAll() }
                         self.thumbnails[ref] = data
+                    } else if imageToken == self.thumbnailGeneration {
+                        self.thumbnailMessage = "FreeShow returned no rendered image. Text previews remain available. Enable a desktop output, then retry preview."
                     }
                 } catch {
-                    if token == self.generation { self.pauseAutomaticThumbnails = true; self.thumbnailQueue = [] }
+                    if token == self.generation {
+                        self.pauseAutomaticThumbnails = true; self.thumbnailQueue = []
+                        self.thumbnailMessage = "Rendered preview failed: \(error.localizedDescription)"
+                    }
                     return
                 }
             }
@@ -404,6 +444,7 @@ final class OperatorStore: ObservableObject {
     }
     private func clearPreview() {
         selectedItemID = nil; selectedSlide = nil; presentation = nil; previewTarget = nil; queuedPreview = nil
+        previewError = nil; thumbnailMessage = nil
     }
     private func drainLoads() {
         guard loadingTask == nil, session.isReady else { return }
@@ -420,6 +461,7 @@ final class OperatorStore: ObservableObject {
                     let presentation = try await self.client.presentation(id: request.0, layoutID: request.1)
                     guard token == self.generation else { return }
                     if self.previewTarget?.0 == request.0 && self.previewTarget?.1 == request.1 {
+                        self.previewError = nil
                         let changed = self.presentation?.slides != presentation.slides
                         self.presentation = presentation
                         if changed {
@@ -433,7 +475,11 @@ final class OperatorStore: ObservableObject {
                     if let current = self.currentReference, presentation.id == current.presentationID && presentation.layoutID == current.layoutID {
                         self.livePresentation = presentation
                     }
-                } catch { if token == self.generation && !(error is CancellationError) { self.errorMessage = error.localizedDescription } }
+                } catch {
+                    if token == self.generation && !(error is CancellationError) {
+                        self.previewError = error.localizedDescription
+                    }
+                }
             }
         }
     }

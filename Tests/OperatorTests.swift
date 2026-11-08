@@ -16,6 +16,8 @@ final class ControlledRemote: RemoteTransport {
     var noOutput = false
     var corruptScripture = false
     var duplicateMediaName = false
+    var missingShow = false
+    var omitShowTitle = false
     var hold: Set<String> = []
     private var held: [(String, RemoteEvent, (RemoteEvent) -> Void)] = []
     func connect(to url: URL) {
@@ -24,6 +26,13 @@ final class ControlledRemote: RemoteTransport {
         backend.receive = { [weak self] event in
             guard let self, let callback = self.receive else { return }
             if case .message(let message) = event {
+                if self.missingShow && message.channel == "API:get_show" {
+                    callback(.message(RemoteMessage(channel: message.channel, data: .null))); return
+                }
+                if self.omitShowTitle && message.channel == "API:get_show", var body = message.data.object {
+                    body.removeValue(forKey: "name")
+                    callback(.message(RemoteMessage(channel: message.channel, data: .object(body)))); return
+                }
                 if self.duplicateMediaName && message.channel == "API:get_projects", var projects = message.data.object,
                    var project = projects["service"]?.object, var items = project["shows"]?.array {
                     items.append(.object(["id": .string("another-document"), "name": .string("Announcements document"), "type": .string("pdf")]))
@@ -101,6 +110,11 @@ struct OperatorTests {
         expect(layout.slides[0].text == "First line\nSecond line", "Styled runs and line order")
         expect(layout.slides[1].isDisabled && !layout.slides[3].isDisabled, "Per-occurrence disabled state")
         expect(layout.slides.map { $0.id.index } == [0,1,2,3], "Zero-based Remote positions")
+        let emptyProjectLayout = try PresentationDecoder.presentation(raw, id: "show", layoutID: "")
+        expect(emptyProjectLayout == layout, "Empty project layout uses active layout")
+        var legacy = raw.object!
+        legacy["settings"] = .object([:])
+        expect(try PresentationDecoder.presentation(.object(legacy), id: "show") == layout, "Single layout can be previewed without activeLayout metadata")
         do { _ = try PresentationDecoder.presentation(raw, id: "show", layoutID: "missing"); fatalError("Missing layout accepted") }
         catch { expect(error as? OperatorError == .unavailableLayout, "Missing layout rejected") }
         let missing = json(#"{"name":"Broken","settings":{"activeLayout":"a"},"layouts":{"a":{"slides":[{"id":"absent"}]}},"slides":{}}"#)
@@ -298,6 +312,50 @@ struct OperatorTests {
         try await Task.sleep(for: .milliseconds(30))
         expect(badFixture.connectCount == badCount, "Unsupported data does not create a reconnect loop")
         bad.disconnect()
+
+        let interactionFixture = ControlledRemote()
+        let interactive = OperatorStore(transport: SwitchableRemoteTransport(live: interactionFixture), defaults: defaults, vault: vault, heartbeatInterval: .seconds(60))
+        interactive.host = "fixture.local"; interactive.connect()
+        try await wait("automatic live preview") { interactive.phase == .connected && interactive.presentation != nil && !interactive.isLoading }
+        expect(interactive.followsLive && interactive.presentation?.id == "welcome", "Connecting loads the current live slide grid automatically")
+        interactionFixture.missingShow = true
+        interactive.retryPreview()
+        try await wait("missing show diagnostic") { !interactive.isLoading && interactive.previewError != nil }
+        expect(interactive.previewError!.contains("no show data"), "Preview failure identifies the missing desktop data")
+        interactionFixture.missingShow = false; interactionFixture.omitShowTitle = true
+        interactive.retryPreview()
+        try await wait("preview recovered") { !interactive.isLoading && interactive.previewError == nil }
+        expect(interactive.presentation?.name == "Welcome", "Library title repairs show bodies that omit a name")
+        let ref = interactive.previewSlide!.id
+        interactive.thumbnailVisible(ref)
+        try await wait("empty image response") { !interactive.thumbnailLoading && interactionFixture.count("API:get_slide_thumbnail") > 0 }
+        let oldCaptures = interactionFixture.count("API:get_slide_thumbnail")
+        interactive.refresh()
+        try await wait("refresh retries images") { interactionFixture.count("API:get_slide_thumbnail") > oldCaptures && !interactive.thumbnailLoading && !interactive.isLoading }
+        expect(interactive.thumbnailMessage != nil, "Unavailable rendered images explain the text fallback")
+        let secondSlide = interactive.presentation!.slides[1]
+        let beforeTap = interactionFixture.count("API:index_select_slide")
+        interactive.tapSlide(secondSlide)
+        expect(interactive.selectedSlide == secondSlide.id && interactionFixture.count("API:index_select_slide") == beforeTap, "Protected single tap only previews")
+        interactive.holdSlide(secondSlide)
+        try await wait("hold presents") { !interactive.isSending && interactive.currentReference == secondSlide.id }
+        expect(interactionFixture.count("API:index_select_slide") == beforeTap + 1, "Protected long press presents once")
+        interactive.singleTapLive = true
+        let thirdSlide = interactive.presentation!.slides[2]
+        interactive.tapSlide(thirdSlide)
+        interactive.holdSlide(thirdSlide)
+        try await wait("single tap presents") { !interactive.isSending && interactive.currentReference == thirdSlide.id }
+        expect(interactionFixture.count("API:index_select_slide") == beforeTap + 2, "Direct mode presents on tap without duplicating long-press commands")
+        interactive.toggleOutput()
+        try await wait("dock clears") { !interactive.isSending && interactive.outputIsClear }
+        expect(interactionFixture.count("API:clear_all") == 1, "Dock clears live output")
+        interactive.toggleOutput()
+        try await wait("dock goes live") { !interactive.isSending && interactive.currentReference == thirdSlide.id }
+        expect(!interactive.outputIsClear, "Dock goes live with selected slide after clearing")
+        interactive.disconnect()
+        let beforeOfflineTap = interactionFixture.count("API:index_select_slide")
+        interactive.tapSlide(thirdSlide)
+        expect(interactionFixture.count("API:index_select_slide") == beforeOfflineTap, "Slide gestures cannot send when disconnected")
 
         print("Passed \(checks) operator checks.")
     }

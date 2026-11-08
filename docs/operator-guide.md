@@ -22,14 +22,14 @@ The last successful host/port is remembered. Passwords remain in memory unless S
 
 - Choose a project to browse locally. **Follow desktop** tracks its active project; **Select on desktop** explicitly changes that project on the desktop.
 - Choose a native show to load its ordered layout. Repeated project entries and parent/child slides keep their occurrence positions. Existing image/video/PDF/audio/overlay/player items with a unique explicit name can be started from the active desktop project using **Start item**, after confirmation and a fresh project/name check. Choose **Select on desktop** first if browsing another project. Ambiguous, unnamed or unsupported entries remain desktop-operated. Native shows containing media still render through the desktop engine.
-- Tap a slide to preview. Preview does not change output. Disabled slides cannot be presented. **Present slide** requires confirmation and a fresh layout validation; desktop edits cause rejection/refresh rather than sending an old index knowingly.
+- The live show’s slide grid loads on connection. **Tap to live** starts off: tap to preview, or hold a slide for half a second to present it. Turn it on for single-tap live changes. Every activation still validates the layout; disabled slides cannot be presented. **Present selected slide** retains confirmation, and VoiceOver provides a **Go live** action on each slide.
 - **Previous / Next** act on desktop output, including PDF pages, not the locally selected preview. Command–[ and Command–] are keyboard equivalents. Media rendering/layer/loop/mute behavior follows the desktop API handler and needs live acceptance; it is not a media editor.
-- **Clear all** also clears audio, backgrounds, overlays and timers and requires confirmation. Restore depends on the desktop cache and locks.
+- Bottom left, **Clear output / Go live** clears active outputs immediately, including audio, backgrounds, overlays and timers. Once the slide layer is clear, **Go live** presents the selected slide, starts supported selected media after confirmation, or restores cached desktop output if no slide is selected. **Tap to live** sits immediately to its left; **Previous / Next** are on the right. **More** contains Restore and confirmed Clear all. Desktop output locks still apply.
 - **Go to live slide** follows the current output in the navigator. Current/next output and selected preview remain distinct. ON OUTPUT identifies the presentation, not a guaranteed occurrence among duplicate project entries.
 
 Live monitoring reads the first active output. Broad commands can affect active outputs collectively. A successful command reply is not presented as proof that the display changed; the output indicator follows desktop-reported state. Missing/temporary/cleared/unknown output is labeled explicitly.
 
-Visible slide thumbnails load lazily, with readable text as fallback. The selected preview can request an image again manually. Render availability depends on desktop output/capture support. Images are cached with a count/size limit; slow renders do not block live commands. The preview text is presentation source text, and desktop styling/dynamic values may differ.
+Visible slide thumbnails load lazily, with readable text as fallback. **Refresh**, **Retry preview**, and **Retry images** reset failed image attempts and retry content. Preview errors distinguish missing show data from unavailable rendered images; successful content retry clears the content error. Render availability depends on desktop output/capture support. Images are cached with a count/size limit; slow renders do not block live commands. The preview text is presentation source text, and desktop styling/dynamic values may differ.
 
 ## Scripture
 
@@ -55,7 +55,7 @@ The protocol has no global revision cursor or atomic edit/present transaction. T
 ./scripts/build-ipad.sh
 ```
 
-Results: 52 connection + 56 scripture + 59 operator checks = **167 checks**. Operator coverage includes a 200-operation sequential navigation stress run, rapid-tap suppression, revalidation before Present, foreground refresh, native/scripture uncertain-send recovery, credential preferences, independent thumbnail/live channels, update stream termination, stale callback protection, and push/query ordering. Tests use synthetic data, isolated preferences and an injected credential vault, not real Keychain entries or live computers.
+Results: 52 connection + 59 scripture + 71 operator checks = **182 checks**. Operator coverage includes a 200-operation sequential navigation stress run, rapid-tap suppression, revalidation before Present, foreground refresh, native/scripture uncertain-send recovery, credential preferences, independent thumbnail/live channels, update stream termination, stale callback protection, and push/query ordering. Tests use synthetic data, isolated preferences and an injected credential vault, not real Keychain entries or live computers.
 
 The app builds with Xcode 27.1 for both simulator architectures. Host checks typecheck domain/services/state and Bonjour/Keychain sources; Xcode compiles the Socket.IO adapter and SwiftUI views. See development-log.md for simulator launch/visual verification details. These results do not replace device/server/long-duration acceptance.
 
@@ -64,7 +64,7 @@ The app builds with Xcode 27.1 for both simulator architectures. Host checks typ
 1. Launch normally and in demo; ensure the demo label is persistent and no network prompt is needed for demo.
 2. Browse projects, including the empty demo project and repeated show. Compare preview, ON OUTPUT badge, and current/next output.
 3. Try the sample PDF with confirmed Start item and Next/Previous, then return to a native show. Select different slides without presenting; output must remain unchanged. Cancel a Present confirmation; then confirm one and navigate.
-4. Try Clear/Restore, including canceling Clear. Confirm the dock stays reachable while scrolling or switching compact panes.
+4. Try the dock’s immediate Clear output / Go live toggle, then More → Restore and the cancelable Clear all action. Test Tap to live off (tap previews, hold presents) and on (tap presents). Confirm the dock stays reachable while scrolling or switching compact panes.
 5. Search/preview Sample 1:1–3 in Scripture and explicitly Present. Try a text search and invalid/cross-chapter reference.
 6. Rotate between portrait/landscape, resize the window, toggle appearance, and test large/accessibility text and VoiceOver. Check all touch targets, labels, scrolling and empty states.
 7. Background/foreground and verify reconnect/reset behavior. Exit demo, inspect Connection preferences/notices, and confirm normal manual entry remains available.

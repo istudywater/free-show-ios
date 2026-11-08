@@ -2,8 +2,10 @@ import Foundation
 
 enum OperatorError: LocalizedError, Equatable {
     case unsupportedResponse, unavailablePresentation, unavailableLayout, missingSlide, changedPresentation, ambiguousItem, inactiveProject
+    case incompletePresentation(String)
     var errorDescription: String? {
         switch self {
+        case .incompletePresentation(let detail): "Slide preview unavailable: \(detail). Retry preview. If this continues, open the show on the Mac and check that its source file is available."
         case .unsupportedResponse: "FreeShow returned an unsupported response. Check the desktop version and reconnect."
         case .unavailablePresentation: "This presentation is unavailable. Refresh the project or select another item."
         case .unavailableLayout: "This presentation layout is unavailable. Select another item or refresh."
@@ -40,8 +42,15 @@ struct PresentationDecoder {
 
     static func presentation(_ value: JSONValue, id: String, layoutID requested: String? = nil) throws -> Presentation {
         guard let name = value["name"].string, let slides = value["slides"].object,
-              let layouts = value["layouts"].object else { throw OperatorError.unavailablePresentation }
-        guard let layoutID = requested ?? value["settings"]["activeLayout"].string,
+              let layouts = value["layouts"].object else {
+            let missing = ["name", "slides", "layouts"].filter { value[$0] == .null }
+            throw OperatorError.incompletePresentation(value == .null ? "FreeShow returned no show data" : "FreeShow returned incomplete show data (\(missing.isEmpty ? "invalid field types" : missing.joined(separator: ", ")))" )
+        }
+        // An empty project layout means use the show's active layout. If older
+        // show data omits it, a single layout is unambiguous; never guess among many.
+        let explicit = requested.flatMap { $0.isEmpty ? nil : $0 }
+        let active = value["settings"]["activeLayout"].string.flatMap { $0.isEmpty ? nil : $0 }
+        guard let layoutID = explicit ?? active ?? (layouts.count == 1 ? layouts.keys.first : nil),
               let parents = layouts[layoutID]?["slides"].array else { throw OperatorError.unavailableLayout }
         var result: [Slide] = []
         let idForShow = id
@@ -92,6 +101,7 @@ final class RemotePresentationService: ConnectionService, PresentationService, O
     private(set) var state: ConnectionState = .disconnected
     private(set) var outputItemID: String?
     private(set) var clearance: ClearedStatus?
+    private(set) var slideLayerCleared: Bool?
     private(set) var latest = PresentationSnapshot(projects: [], activeProjectID: nil, output: .unknown, receivedAt: .distantPast)
     var onChange: ((PresentationSnapshot) -> Void)?
     private let session: RemoteSession
@@ -110,7 +120,7 @@ final class RemotePresentationService: ConnectionService, PresentationService, O
         _ = session.observeMessages { [weak self] in self?.receive($0) }
         _ = session.observeDisconnect { [weak self] error in
             guard let self else { return }
-            self.state = .disconnected; self.clearance = nil; self.outputItemID = nil
+            self.state = .disconnected; self.clearance = nil; self.outputItemID = nil; self.slideLayerCleared = nil
             self.latest = PresentationSnapshot(projects: self.latest.projects, activeProjectID: self.latest.activeProjectID,
                 output: .unknown, receivedAt: self.latest.receivedAt)
             self.onChange?(self.latest)
@@ -119,7 +129,7 @@ final class RemotePresentationService: ConnectionService, PresentationService, O
         }
     }
     func clearStoredData() {
-        rawProjects = .object([:]); shows = .object([:]); clearance = nil; outputItemID = nil
+        rawProjects = .object([:]); shows = .object([:]); clearance = nil; outputItemID = nil; slideLayerCleared = nil
         latest = PresentationSnapshot(projects: [], activeProjectID: nil, output: .unknown, receivedAt: .distantPast)
         publish()
     }
@@ -155,6 +165,7 @@ final class RemotePresentationService: ConnectionService, PresentationService, O
         if revision == version {
             outputItemID = out["slide"]["id"].string ?? out["background"]["path"].string ?? out["background"]["id"].string
             clearance = flags
+            slideLayerCleared = out.object?["slide"].map { $0 == .null } ?? flags.slide
             latest = PresentationSnapshot(projects: latest.projects, activeProjectID: latest.activeProjectID,
                 output: flags.all && out != .null ? .cleared : PresentationDecoder.output(out), receivedAt: Date(), desktopSelectionID: latest.desktopSelectionID)
             publish()
@@ -169,7 +180,12 @@ final class RemotePresentationService: ConnectionService, PresentationService, O
             else { showWaiters.removeFirst().resume() }
         }
         try Task.checkCancellation()
-        return try PresentationDecoder.presentation(await query("get_show", fields: ["id": .string(id)]), id: id, layoutID: layoutID)
+        var value = try await query("get_show", fields: ["id": .string(id)])
+        // The library is authoritative for titles; some cached show bodies omit one.
+        if var body = value.object, body["name"]?.string == nil, let name = shows[id]["name"].string {
+            body["name"] = .string(name); value = .object(body)
+        }
+        return try PresentationDecoder.presentation(value, id: id, layoutID: layoutID)
     }
     func thumbnail(for slide: SlideReference) async throws -> Data? {
         let result = try await query("get_slide_thumbnail", fields: ["showId": .string(slide.presentationID),
@@ -257,6 +273,7 @@ final class RemotePresentationService: ConnectionService, PresentationService, O
                     output: latest.output, receivedAt: Date(), desktopSelectionID: latest.desktopSelectionID)
             case "OUT_DATA":
                 revision += 1; clearance = nil
+                slideLayerCleared = message.data.object?["slide"].map { $0 == .null }
                 outputItemID = message.data["slide"]["id"].string ?? message.data["background"]["path"].string ?? message.data["background"]["id"].string
                 latest = PresentationSnapshot(projects: latest.projects, activeProjectID: latest.activeProjectID,
                     output: PresentationDecoder.output(message.data), receivedAt: Date(), desktopSelectionID: latest.desktopSelectionID)
